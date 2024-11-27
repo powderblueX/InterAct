@@ -37,9 +37,22 @@
 		841E32772CF5FC9F0020AB0C /* InterActUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = InterActUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		84BC58C32CF795D000D82A04 /* Exceptions for "InterAct" folder in "InterAct" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 841E325C2CF5FC9D0020AB0C /* InterAct */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		841E325F2CF5FC9D0020AB0C /* InterAct */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				84BC58C32CF795D000D82A04 /* Exceptions for "InterAct" folder in "InterAct" target */,
+			);
 			path = InterAct;
 			sourceTree = "<group>";
 		};
@@ -422,6 +435,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"InterAct/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = InterAct/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -450,6 +464,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"InterAct/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = InterAct/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

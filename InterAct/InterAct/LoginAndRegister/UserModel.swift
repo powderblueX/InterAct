@@ -22,6 +22,7 @@ class UserModel {
                 // 登录成功，将ID，用户名存储到 UserDefaults
                 UserDefaults.standard.set(objectId, forKey: "objectId")
                 UserDefaults.standard.set(username, forKey: "username")
+
                 // 存储密码到 Keychain
                 if !KeychainHelper.savePassword(password: password) {
                     completion(.failure(NSError(domain: "KeychainError", code: 0, userInfo: [NSLocalizedDescriptionKey: "无法保存密码"])))

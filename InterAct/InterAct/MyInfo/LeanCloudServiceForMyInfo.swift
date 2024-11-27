@@ -61,6 +61,7 @@ class LeanCloudService {
                 )
                 
                 UserDefaults.standard.set(avatarURL, forKey: "avatarURL")
+                // TODO: 将用户信息全部保存
                 
                 print(userInfo)
                 completion(.success(userInfo))

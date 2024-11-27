@@ -10,22 +10,22 @@ import SwiftUI
 struct MainTabView: View {
     var body: some View {
         TabView {
-            // 环保项目
-            RecommendedActivitiesView()
+            // 推荐活动
+            CreateActivityView()
                 .tabItem {
                     Image(systemName: "smiley")
                     Text("推荐活动")
                 }
             
-            // 附近论坛
+            // 附近活动
             NearbyActivitiesView()
                 .tabItem {
                     Image(systemName: "map")
                     Text("附近活动")
                 }
 
-            // 我的树
-            LiveChatView()
+            // 即时聊天
+            UserListView()
                 .tabItem {
                     Image(systemName: "envelope")
                     Text("即时聊天")

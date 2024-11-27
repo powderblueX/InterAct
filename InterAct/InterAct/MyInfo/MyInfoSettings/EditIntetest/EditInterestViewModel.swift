@@ -9,7 +9,7 @@ import Foundation
 import LeanCloud
 
 class EditIntereViewModel: ObservableObject {
-    @Published var interestTags: [String] = EditInterestModel().InterestTag  // 兴趣标签
+    @Published var interestTags: [String] = Interest().InterestTags  // 兴趣标签
     @Published var selectedInterests: [String] = [] // 当前选中标签
     @Published var errorMessage: ErrorMessage?
     @Published var isButtonDisabled: Bool = true
