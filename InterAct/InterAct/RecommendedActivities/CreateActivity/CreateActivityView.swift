@@ -18,6 +18,7 @@ struct CreateActivityView: View {
     @State private var showingMapView = false // 控制是否显示地图选择地点
     @State private var locationManager = CLLocationManager()
     
+    @Environment(\.dismiss) var dismiss
     
     // 获取兴趣标签列表
     let availableTags = Interest().InterestTags
@@ -33,7 +34,7 @@ struct CreateActivityView: View {
                 // 标签选择部分
                 Section(header: Text("选择标签")) {
                     HStack {
-                        Text(tempSelectedTags.isEmpty ? "请选择标签" : tempSelectedTags.joined(separator: ", "))
+                        Text(viewModel.selectedTags.isEmpty ? "请选择标签" : viewModel.selectedTags.joined(separator: ", "))
                         Spacer()
                         Button(action: {
                             showingTagSelection.toggle() // 弹出标签选择界面
@@ -62,10 +63,10 @@ struct CreateActivityView: View {
                 Section(header: Text("活动简介")) {
                     TextEditor(text: $viewModel.activityDescription)
                         .frame(height: 150)
-                        .onChange(of: viewModel.activityDescription) { newText in
+                        .onChange(of: viewModel.activityDescription) {
                             // 限制简介字符数为200以内
-                            if newText.count > 200 {
-                                viewModel.activityDescription = String(newText.prefix(200))
+                            if viewModel.activityDescription.count > 200 {
+                                viewModel.activityDescription = String(viewModel.activityDescription.prefix(200))
                             }
                         }
                     Text("\(viewModel.activityDescription.count)/200 字") // 显示当前字数
@@ -74,11 +75,15 @@ struct CreateActivityView: View {
                 }
                 
                 // 上传照片
-                Section(header: Text("上传照片（可选）")) {
+                Section(header: Text("上传一张照片（可选）")) {
                     Button("选择照片") {
                         // 这里可以通过ImagePicker选择照片
-                        viewModel.selectedImage = UIImage(named: "sample_image") // 这里模拟上传照片
+                        viewModel.isImagePickerPresented = true // 这里模拟上传照片
                     }
+                    Image(uiImage: viewModel.selectedImage ?? UIImage())
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 100, height: 100)
                 }
                 
                 // 选择定位
@@ -87,16 +92,18 @@ struct CreateActivityView: View {
                         // 在这里可以选择发起人所在地或者点击地图选择
                         showingMapView.toggle() // 显示地图界面
                     }
-                    // 展示发起人位置
-                    // TODO: 思考是否需要发起人位置
-//                    Text("发起人位置：(\(viewModel.hostLocation.latitude), \(viewModel.hostLocation.longitude))")
+                    if viewModel.islocationDistanceWarning {
+                        Text(viewModel.locationDistanceWarning)
+                            .foregroundColor(.red)
+                            .font(.footnote)
+                            .padding(.top, 5)
+                    }
                 }
                 
                 // 发布按钮
                 Section {
                     Button("确认发布") {
-                        // 假设creatorId为"123"（实际可以从用户数据中获取）
-                        viewModel.createActivity(creatorId: "123")
+                        viewModel.createActivity()
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding()
@@ -106,22 +113,47 @@ struct CreateActivityView: View {
                 }
             }
             .navigationTitle("发布活动")
+            .sheet(isPresented: $viewModel.isImagePickerPresented) {
+                AvatarImagePicker.ImagePicker(
+                    selectedImage: $viewModel.selectedImage,
+                    onImagePicked: {
+                        viewModel.isImageEditingPresented = true
+                    },
+                    isEditingPresented: $viewModel.isImageEditingPresented
+                )
+            }
+            .fullScreenCover(isPresented: $viewModel.isImageEditingPresented) {
+                if viewModel.selectedImage != nil {
+                    CropImageView(image: $viewModel.selectedImage) { croppedImage in
+                        viewModel.selectedImage = croppedImage
+                    }
+                }
+            }
             .alert(isPresented: $viewModel.showAlert) {
                 Alert(title: Text("提示"), message: Text(viewModel.alertMessage), dismissButton: .default(Text("确定")))
             }
             .sheet(isPresented: $showingTagSelection) {
-                TagSelectionView(availableTags: availableTags, selectedTags: $tempSelectedTags, showingTagSelection: $showingTagSelection)
+                TagSelectionView(availableTags: availableTags, selectedTags: $viewModel.selectedTags, showingTagSelection: $showingTagSelection)
             }
             .sheet(isPresented: $showingMapView) {
                 MapView(selectedLocation: $viewModel.location, locationName: $viewModel.selectedLocationName) // 显示地图视图来选择位置
+                    .onDisappear {
+                        viewModel.updateLocationDistanceWarning()
+                    }
+            }
+            .onChange(of: viewModel.isCreateSuccessfully) {
+                if viewModel.isCreateSuccessfully {
+                    dismiss()  // 调用 dismiss() 关闭当前视图
+                }
             }
         }
-        .onAppear {
-            viewModel.startUpdatingLocation() // 确保在视图出现时开始位置更新
-        }
-        .onDisappear {
-            viewModel.stopUpdatingLocation() // 停止更新位置
-        }
+        // TODO: 可以在主界面加上一个刷新按钮，按下后重新定位
+//        .onAppear {
+//            viewModel.startUpdatingLocation() // 确保在视图出现时开始位置更新
+//        }
+//        .onDisappear {
+//            viewModel.stopUpdatingLocation() // 停止更新位置
+//        }
     }
 }
 

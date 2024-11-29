@@ -9,10 +9,11 @@ import Foundation
 import CoreLocation
 import SwiftUI
 import MapKit
+import LeanCloud
 
 class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var activityName: String = ""
-    @Published var selectedTags: [String] = [] // 用户选择的兴趣标签数组
+    @Published var selectedTags: [String] = ["无🚫"] // 用户选择的兴趣标签数组
     @Published var activityTime: Date = Date()
     @Published var participantsCount: Int = 10
     @Published var activityDescription: String = ""
@@ -27,6 +28,15 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
     @Published var activityNameError: String? = nil
     @Published var activityDescriptionError: String? = nil
     @Published var locationError: String? = nil
+    @Published var islocationDistanceWarning: Bool = false
+    @Published var locationDistanceWarning: String = "活动地点与发起人位置相距过远，可能不方便参与。" // 距离过远的提示信息
+    @Published var isImagePickerPresented: Bool = false
+    @Published var isImageEditingPresented: Bool = false
+    @Published var isCreateSuccessfully: Bool = false
+    
+    private var hostId: String? {
+        UserDefaults.standard.string(forKey: "objectId")
+    }
     
     // 最多字符数
     let maxDescriptionLength = 200
@@ -34,6 +44,8 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
     private let maxDistance: Double = 1000
     // 引用Interest结构体
     let interest = Interest()
+    
+    // TODO: 添加一个经验值来限制活动数
     
     // 用于地理编码
     private let geocoder = CLGeocoder()
@@ -70,7 +82,11 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
     // 开始更新位置
     func startUpdatingLocation() {
         if CLLocationManager.locationServicesEnabled() {
-            locationManager.startUpdatingLocation()
+            if locationManager.authorizationStatus == .authorizedWhenInUse || locationManager.authorizationStatus == .authorizedAlways {
+                DispatchQueue.global(qos: .background).async {
+                    self.locationManager.startUpdatingLocation()
+                }
+            }
         }
     }
     
@@ -80,20 +96,20 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
     }
     
     // 地理编码：通过地址获取经纬度
-    func geocodeAddress(address: String) {
-        geocoder.geocodeAddressString(address) { [weak self] (placemarks, error) in
-            if let error = error {
-                print("Geocoding failed: \(error.localizedDescription)")
-                return
-            }
-            
-            if let placemark = placemarks?.first, let location = placemark.location {
-                // 更新选择的经纬度和名称
-                self?.location = location.coordinate
-                self?.selectedLocationName = placemark.name ?? "未知位置"
-            }
-        }
-    }
+//    func geocodeAddress(address: String) {
+//        geocoder.geocodeAddressString(address) { [weak self] (placemarks, error) in
+//            if let error = error {
+//                print("Geocoding failed: \(error.localizedDescription)")
+//                return
+//            }
+//            
+//            if let placemark = placemarks?.first, let location = placemark.location {
+//                // 更新选择的经纬度和名称
+//                self?.location = location.coordinate
+//                self?.selectedLocationName = placemark.name ?? "未知位置"
+//            }
+//        }
+//    }
     
     // 选择地图位置
     func selectLocation(_ newLocation: CLLocationCoordinate2D) {
@@ -101,22 +117,26 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
     }
     
     // 判断选择的活动地点与发起人位置的距离
-    func validateLocation() -> Bool {
+    func updateLocationDistanceWarning() {
+        guard let selectedLocation = location else { return }
+        
         let hostCLLocation = CLLocation(latitude: hostLocation.latitude, longitude: hostLocation.longitude)
-        let activityCLLocation = CLLocation(latitude: location?.latitude ?? 39.90750000, longitude: location?.longitude ?? 116.38805555)
+        let activityCLLocation = CLLocation(latitude: selectedLocation.latitude, longitude: selectedLocation.longitude)
         
         let distance = hostCLLocation.distance(from: activityCLLocation)
         
-        if distance > maxDistance {
-            alertMessage = "活动地点与发起人位置相距过远，是否继续发布？"
-            showAlert = true
-            return false
-        }
-        return true
+        islocationDistanceWarning = distance > maxDistance
     }
     
     // 提交活动到LeanCloud
-    func createActivity(creatorId: String) {
+    func createActivity() {
+        guard let hostId = hostId else {
+            // TODO: 退出登录处理
+            alertMessage = "用户数据出错，请重新登录"
+            showAlert = true
+            return
+        }
+        
         // 检查数据是否有效
         if activityName.isEmpty {
             alertMessage = "标题不能为空"
@@ -138,39 +158,60 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
             return
         }
         
-        // 验证地点是否合适
-        guard validateLocation() else { return }
+        let activity = LCObject(className: "Activity")
+        activity["activityName"] = LCString(activityName)
+        activity["interestTag"] = LCArray(selectedTags.map { LCString($0) })
+        activity["activityTime"] = LCDate(activityTime)
+        activity["activityDescription"] = LCString(activityDescription)
+        activity["hostId"] = LCString(hostId)
+        activity["participantsCount"] = LCNumber(integerLiteral: participantsCount)
+        activity["participantIds"] = LCArray([hostId]) // 参与者 ID 数组（可以根据用户数据填充）
+        activity["location"] = LCGeoPoint(latitude: location?.latitude ?? 39.90750000, longitude: location?.longitude ?? 116.38805555)
         
-        // 创建活动对象
-        let activity = Activity(
-            id: UUID().uuidString,
-            activityName: activityName,
-            interestTag: selectedTags, // 使用选择的标签数组
-            activityTime: activityTime,
-            activityDescription: activityDescription,
-            hostId: creatorId,
-            participantsCount: participantsCount,
-            participantIds: [], // 初始化为空，实际可以根据用户数据填充
-            location: location ?? CLLocationCoordinate2D(latitude: 39.90750000, longitude: 116.38805555),
-            hostLocation: hostLocation,
-            image: selectedImage
-        )
-        
-        // 将活动数据提交到LeanCloud（模拟）
-        submitActivityToLeanCloud(activity)
+        // 将 UIImage 转换为 JPEG 数据
+        if let image = selectedImage, let imageData = image.jpegData(compressionQuality: 0.8) {
+            let file = LCFile(payload: .data(data: imageData))
+                
+            file.save { [self] result in
+                switch result {
+                case .success:
+                    // 获取文件的 URL 字符串
+                    if let fileUrl = file.url?.value {
+                        let secureURL = fileUrl.replacingOccurrences(of: "http://", with: "https://")
+                        activity["image"] = LCString(secureURL) // 保存文件 URL 到 LeanCloud
+                        saveActivity(activity)  // 上传活动信息
+                    } else {
+                        self.alertMessage = "图片上传失败，无法获取文件 URL"
+                        self.showAlert = true
+                    }
+                case .failure(let error):
+                    self.alertMessage = "图片上传失败: \(error.localizedDescription)"
+                    self.showAlert = true
+                }
+            }
+        } else {
+            // 如果没有选择图片，直接保存活动信息
+            saveActivity(activity)
+        }
     }
     
-    // 模拟提交到LeanCloud
-    private func submitActivityToLeanCloud(_ activity: Activity) {
-        // 在这里实现LeanCloud的API调用代码，提交活动数据
-        print("Activity created: \(activity)")
-        // 假设提交成功
-        alertMessage = "活动发布成功！"
-        showAlert = true
+    func saveActivity(_ activity: LCObject) {
+        // 保存活动信息到 LeanCloud
+        activity.save { result in
+            switch result {
+            case .success:
+                self.isCreateSuccessfully = true
+                self.alertMessage = "活动发布成功！"
+                self.showAlert = true
+            case .failure(let error):
+                self.alertMessage = "发布失败: \(error.localizedDescription)"
+                self.showAlert = true
+            }
+        }
     }
     
     // 使用 CLGeocoder 将经纬度转换为地名
-    //使用 MKLocalSearch 查找具体地标的名称
+    // 使用 MKLocalSearch 查找具体地标的名称
     func reverseGeocodeLocation(_ location: CLLocationCoordinate2D) {
         let searchRequest = MKLocalSearch.Request()
         searchRequest.naturalLanguageQuery = "博物馆" // 可以尝试更具体的搜索关键字

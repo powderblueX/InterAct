@@ -19,6 +19,6 @@ struct Activity {
     var participantsCount: Int
     var participantIds: Array<String>
     var location: CLLocationCoordinate2D
-    var hostLocation: CLLocationCoordinate2D // 发起人所在位置
-    var image: UIImage? // 上传的照片（非必填项）
+    //var hostLocation: CLLocationCoordinate2D // 发起人所在位置
+    var image: URL? // 上传的照片（非必填项）
 }

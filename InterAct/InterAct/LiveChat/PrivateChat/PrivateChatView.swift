@@ -18,7 +18,7 @@ struct PrivateChatView: View {
     
     var body: some View {
         VStack {
-            // 顶部显示对方的用户名
+            // TODO: 顶部显示对方的用户名
             Text(viewModel.recipientUserId) // 假设对方的用户名是 recipientUserId
                 .font(.title)
                 .fontWeight(.bold)
@@ -50,7 +50,7 @@ struct PrivateChatView: View {
                 
                 // 选择图片按钮
                 Button(action: {
-                    // 这里你可以添加调用相机或选择相册的逻辑
+                    // TODO: 可以添加调用相机或选择相册的逻辑
                     viewModel.selectImage()
                 }) {
                     Image(systemName: "photo")
@@ -69,7 +69,7 @@ struct PrivateChatView: View {
         )) {
             Alert(
                 title: Text("错误"),
-                message: Text((viewModel.onError as? LocalizedError)?.errorDescription ?? "未知错误"),
+                message: Text(viewModel.onError?.localizedDescription ?? "未知错误"),
                 dismissButton: .default(Text("确定"))
             )
         }

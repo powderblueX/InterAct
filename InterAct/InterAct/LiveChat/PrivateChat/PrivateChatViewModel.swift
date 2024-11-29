@@ -20,7 +20,7 @@ class PrivateChatViewModel: ObservableObject {
     
     // 数据绑定：通过这些闭包通知 View 层更新
     var onMessagesUpdated: (([Message]) -> Void)?
-    var onError: ((Error) -> Void)?
+    @Published var onError: Error?
     
     // 当前消息列表
     @Published var messages: [Message] = [] {
@@ -47,7 +47,7 @@ class PrivateChatViewModel: ObservableObject {
             case .success:
                 self?.fetchOrCreateConversation()
             case .failure(let error):
-                self?.onError?(error)
+                self?.onError = error
             }
         }
     }
@@ -62,7 +62,7 @@ class PrivateChatViewModel: ObservableObject {
                     self?.setupMessageReceiving()
                     self?.loadMessageHistory()
                 case .failure(let error):
-                    self?.onError?(error)
+                    self?.onError = error
                 }
             }
         } catch {
@@ -93,7 +93,7 @@ class PrivateChatViewModel: ObservableObject {
                         return nil
                     }
                 case .failure(let error):
-                    self?.onError?(error)
+                    self?.onError = error
                 }
             }
         } catch {
@@ -118,7 +118,7 @@ class PrivateChatViewModel: ObservableObject {
                     )
                     self?.messages.append(newMessage)
                 case .failure(let error):
-                    self?.onError?(error)
+                    self?.onError = error
                 }
             }
         } catch {
@@ -133,7 +133,7 @@ class PrivateChatViewModel: ObservableObject {
     
     // 发送图片消息
     func sendImage(_ image: UIImage) {
-        guard let conversation = conversation else { return }
+        guard conversation != nil else { return }
         
         // 将图片转换为 LeanCloud 支持的格式（比如：保存到 LeanCloud 或发送为图片消息）
         // TODO: 这里省略了上传图片的具体实现，假设我们可以生成一个图片消息

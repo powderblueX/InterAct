@@ -61,6 +61,10 @@ class LeanCloudService {
                 )
                 
                 UserDefaults.standard.set(avatarURL, forKey: "avatarURL")
+                UserDefaults.standard.set(email, forKey: "email")
+                UserDefaults.standard.set(interest, forKey: "interest")
+                UserDefaults.standard.set(birthday, forKey: "birthday")
+                UserDefaults.standard.set(gender, forKey: "gender")
                 // TODO: 将用户信息全部保存
                 
                 print(userInfo)

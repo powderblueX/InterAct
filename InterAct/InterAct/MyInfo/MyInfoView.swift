@@ -113,7 +113,7 @@ struct MyInfoView: View {
     }
 }
 
-// 帖子详情视图
+// TODO:帖子详情视图
 struct PostDetailView: View {
     let post: MyInfoModel.Post
 
@@ -122,5 +122,4 @@ struct PostDetailView: View {
             .navigationTitle(post.title)
     }
 }
-
 

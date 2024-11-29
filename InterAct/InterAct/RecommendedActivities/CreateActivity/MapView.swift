@@ -15,7 +15,7 @@ struct MapView: View {
     
     @State private var region: MKCoordinateRegion
     @State private var locationManager = CLLocationManager()
-    @State private var userTrackingMode: MapUserTrackingMode = .follow // 使用 `.follow` 作为初始状态
+//    @State private var userTrackingMode: MapUserTrackingMode = .follow // 使用 `.follow` 作为初始状态
     @State private var searchText: String = "" // 用于搜索的文本框
     
     @Environment(\.dismiss) var dismiss
@@ -38,18 +38,21 @@ struct MapView: View {
             .textFieldStyle(RoundedBorderTextFieldStyle())
             .padding()
             
-            Map(coordinateRegion: $region, interactionModes: .all, showsUserLocation: true)
-                .onTapGesture(coordinateSpace: .global) { _ in
-                    // 获取点击位置并更新选中的位置
-                    let tappedLocation = region.center
-                    selectedLocation = tappedLocation
-                    reverseGeocode(location: tappedLocation) // 获取选中位置的地址
-                }
+            GeometryReader { geometry in
+                Map(coordinateRegion: $region, interactionModes: .all, showsUserLocation: true)
+                    .onTapGesture(coordinateSpace: .global) { _ in
+                        // 获取点击位置并更新选中的位置
+                        let tappedLocation = region.center
+                        selectedLocation = tappedLocation
+                        reverseGeocode(location: tappedLocation) // 获取选中位置的地址
+                    }
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+            }
+            .frame(height: 600)  // 外部 frame 调整
             
             VStack {
-                Spacer()
+                
                 HStack {
-                    Spacer()
                     Button(action: {
                         // 保存选择的地点
                         dismiss()
@@ -64,16 +67,26 @@ struct MapView: View {
                 }
             }
         }
-        .onAppear {
-            locationManager.requestWhenInUseAuthorization()
-            if CLLocationManager.locationServicesEnabled() {
-                locationManager.delegate = locationManager as? CLLocationManagerDelegate
-                locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-                locationManager.startUpdatingLocation()
+//        .onAppear {
+//            locationManager.requestWhenInUseAuthorization()
+//            if CLLocationManager.locationServicesEnabled() {
+//                locationManager.delegate = locationManager as? CLLocationManagerDelegate
+//                locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+//                locationManager.startUpdatingLocation()
+//            }
+//        }
+        .onChange(of: locationManager.authorizationStatus) { oldValue, status in
+            if status == .authorizedWhenInUse || status == .authorizedAlways {
+                DispatchQueue(label: "定位", qos: .background).async {
+                    locationManager.delegate = locationManager as? CLLocationManagerDelegate
+                    locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+                    locationManager.startUpdatingLocation()
+                }
             }
         }
     }
     
+    // TODO: MVVM 架构
     // 搜索地址的函数
     private func searchAddress() {
         let geocoder = CLGeocoder()

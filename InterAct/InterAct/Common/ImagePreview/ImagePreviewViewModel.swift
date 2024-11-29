@@ -1,15 +1,15 @@
 //
-//  AvatarPreviewViewModel.swift
+//  ImagePreviewViewModel.swift
 //  InterAct
 //
-//  Created by admin on 2024/11/24.
+//  Created by admin on 2024/11/29.
 //
 
 import Foundation
 import SwiftUI
 import Kingfisher
 
-class AvatarPreviewViewModel: ObservableObject {
+class ImagePreviewViewModel: ObservableObject {
     @Published var showSaveConfirmation = false
     @Published var saveSuccessMessage: String? = nil
 
@@ -34,4 +34,3 @@ class AvatarPreviewViewModel: ObservableObject {
         }
     }
 }
-
