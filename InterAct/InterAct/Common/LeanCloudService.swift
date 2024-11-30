@@ -372,9 +372,7 @@ struct LeanCloudService {
                     guard let activityName = object["activityName"]?.stringValue,
                           let interestTag = object["interestTag"]?.arrayValue,
                           let activityTime = object["activityTime"]?.dateValue,
-                          //let activityDescription = object["activityDescription"]?.stringValue,
-                          //let hostId = object["hostId"]?.stringValue,
-                            let participantsCount = object["participantsCount"]?.intValue,
+                          let participantsCount = object["participantsCount"]?.intValue,
                           let participantIds = object["participantIds"]?.arrayValue,
                           let location = object["location"] as? LCGeoPoint
                     else {
@@ -393,10 +391,11 @@ struct LeanCloudService {
                         activityTime: activityTime,
                         activityDescription: "",
                         hostId: "",
+                        hostUsername: "",
                         participantsCount: participantsCount,
                         participantIds: participantIds as? Array<String> ?? [],
-                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
-                        //image: image  // 此处根据实际情况处理图片
+                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
+                        locationName: ""
                     )
                 }
                 
@@ -448,9 +447,11 @@ struct LeanCloudService {
                         activityTime: activityTime,
                         activityDescription: "",
                         hostId: "",
+                        hostUsername: "",
                         participantsCount: participantsCount,
                         participantIds: participantIds as? Array<String> ?? [],
-                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
+                        locationName: ""
                     )
                 }
                 
@@ -469,6 +470,7 @@ struct LeanCloudService {
         }
     }
     
+    
     // 获取活动详细信息
     static func fetchActivityDetails(activityId: String, completion: @escaping (Result<Activity, Error>) -> Void) {
         // LeanCloud 查询活动数据
@@ -485,7 +487,8 @@ struct LeanCloudService {
                       let hostId = object["hostId"]?.stringValue,
                       let participantsCount = object["participantsCount"]?.intValue,
                       let participantIds = object["participantIds"]?.arrayValue,
-                      let location = object["location"] as? LCGeoPoint
+                      let location = object["location"] as? LCGeoPoint,
+                      let locationName = object["locationName"]?.stringValue
                 else {
                     return
                 }
@@ -494,28 +497,44 @@ struct LeanCloudService {
                 // 如果 avatarURLString 有值，尝试转换为 URL
                 let image = imageURLString.isEmpty ? nil : URL(string: imageURLString)
                 
-                // 将 LeanCloud 对象转化为 Activity 模型
-                let activity = Activity(
-                    id: object.objectId!.stringValue ?? "",
-                    activityName: activityName,
-                    interestTag: interestTag as? Array<String> ?? [],
-                    activityTime: activityTime,
-                    activityDescription: activityDescription,
-                    hostId: hostId,
-                    participantsCount: participantsCount,
-                    participantIds: participantIds as? Array<String> ?? [],
-                    location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
-                    image: image  // 此处根据实际情况处理图片
-                )
-                completion(.success(activity))
+                // 获取 hostId 对应的用户（用户名）
+                let userQuery = LCQuery(className: "_User")
+                userQuery.whereKey("objectId", .equalTo(hostId))
+                userQuery.getFirst { userResult in
+                    switch userResult {
+                    case .success(let userObject):
+                        // 获取用户名
+                        let username = userObject["username"]?.stringValue ?? "未知"
+                        
+                        // 创建活动模型对象
+                        let activity = Activity(
+                            id: object.objectId!.stringValue ?? "",
+                            activityName: activityName,
+                            interestTag: interestTag as? Array<String> ?? [],
+                            activityTime: activityTime,
+                            activityDescription: activityDescription,
+                            hostId: hostId,
+                            hostUsername: username,
+                            participantsCount: participantsCount,
+                            participantIds: participantIds as? Array<String> ?? [],
+                            location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
+                            locationName: locationName,
+                            image: image  // 此处根据实际情况处理图片
+                        )
+                        completion(.success(activity))
+                    case .failure(let error):
+                        completion(.failure(error))
+                    }
+                }
             case .failure(let error):
                 completion(.failure(error))
             }
         }
     }
     
-    // 提交活动到LeanCloud
-    static func createActivity(activityName: String, selectedTags: [String], activityTime: Date, activityDescription: String, hostId: String?, location: CLLocationCoordinate2D?, selectedImage: UIImage?, participantsCount: Int, completion: @escaping (Bool, String) -> Void) {
+    
+    // 创建活动
+    static func createActivity(activityName: String, selectedTags: [String], activityTime: Date, activityDescription: String, hostId: String?, location: CLLocationCoordinate2D?, locationName: String, selectedImage: UIImage?, participantsCount: Int, completion: @escaping (Bool, String) -> Void) {
         guard let hostId = hostId else {
             // 如果 hostId 为 nil，返回错误信息
             completion(false, "用户数据出错，请重新登录")
@@ -549,6 +568,7 @@ struct LeanCloudService {
         activity["participantsCount"] = LCNumber(integerLiteral: participantsCount)
         activity["participantIds"] = LCArray([hostId]) // 参与者 ID 数组（可以根据用户数据填充）
         activity["location"] = LCGeoPoint(latitude: location?.latitude ?? 39.90750000, longitude: location?.longitude ?? 116.38805555)
+        activity["locationName"] = LCString(locationName)
         
         // 将 UIImage 转换为 JPEG 数据
         if let image = selectedImage, let imageData = image.jpegData(compressionQuality: 0.8) {
@@ -574,7 +594,6 @@ struct LeanCloudService {
             saveActivity(activity: activity, completion: completion)
         }
     }
-    
     private static func saveActivity(activity: LCObject, completion: @escaping (Bool, String) -> Void) {
         activity.save { result in
             // 保存活动信息到 LeanCloud

@@ -10,7 +10,8 @@ import Foundation
 class ActivityDetailViewModel: ObservableObject {
     @Published var isImageSheetPresented: Bool = false
     @Published var showSaveImageAlert: Bool = false
-    @Published var activity: Activity? = nil  // 存储活动信息
+    @Published var activity: Activity? = nil
+    @Published var currentUserId: String = ""
     
     func fetchActivityDetail(activityId: String) {
         // 使用 LeanCloud SDK 获取活动详情
@@ -24,5 +25,11 @@ class ActivityDetailViewModel: ObservableObject {
         }
     }
     
-    
+    func getCurrentId(){
+        guard let objectId = UserDefaults.standard.string(forKey: "objectId") else {
+            // TODO: 用户登出
+            return
+        }
+        currentUserId = objectId
+    }
 }

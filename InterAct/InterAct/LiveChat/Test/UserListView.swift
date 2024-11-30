@@ -51,7 +51,7 @@ struct UserListView: View {
                         
                         Spacer()
                         NavigationLink(destination: PrivateChatView(viewModel: PrivateChatViewModel(currentUserId: "6746dc6e2096fe04ef313a1d", recipientUserId: "6745d7b4da26173b54aff6de"))) {
-                            
+
                         }
                     }
                     .navigationTitle("用户列表")

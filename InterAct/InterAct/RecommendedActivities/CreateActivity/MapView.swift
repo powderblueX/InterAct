@@ -30,40 +30,47 @@ struct MapView: View {
     }
     
     var body: some View {
-        VStack {
-            // 地址搜索框
-            TextField("输入地址或地点名称", text: $searchText, onCommit: {
-                searchAddress() // 按回车后进行搜索
-            })
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-            .padding()
-            
-            GeometryReader { geometry in
-                Map(coordinateRegion: $region, interactionModes: .all, showsUserLocation: true)
-                    .onTapGesture(coordinateSpace: .global) { _ in
-                        // 获取点击位置并更新选中的位置
-                        let tappedLocation = region.center
-                        selectedLocation = tappedLocation
-                        reverseGeocode(location: tappedLocation) // 获取选中位置的地址
-                    }
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-            }
-            .frame(height: 600)  // 外部 frame 调整
-            
+        ScrollView{
             VStack {
+                // 地址搜索框
+                TextField("输入地址或地点名称", text: $searchText, onCommit: {
+                    searchAddress() // 按回车后进行搜索
+                })
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
                 
-                HStack {
-                    Button(action: {
-                        // 保存选择的地点
-                        dismiss()
-                    }) {
-                        Text("确定选择")
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
+                GeometryReader { geometry in
+                    Map(coordinateRegion: $region, interactionModes: .all, showsUserLocation: true)
+                        .onTapGesture(coordinateSpace: .global) { _ in
+                            // 获取点击位置并更新选中的位置
+                            let tappedLocation = region.center
+                            selectedLocation = tappedLocation
+                            reverseGeocode(location: tappedLocation) // 获取选中位置的地址
+                        }
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                }
+                .frame(height: 500)  // 外部 frame 调整
+                
+                VStack {
+                    Text("所选位置📍：")
+                        .bold()
+                    
+                    Text("\(locationName)")
+                        .bold()
+                    
+                    HStack {
+                        Button(action: {
+                            // 保存选择的地点
+                            dismiss()
+                        }) {
+                            Text("确定选择")
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(8)
+                        }
+                        .padding()
                     }
-                    .padding()
                 }
             }
         }

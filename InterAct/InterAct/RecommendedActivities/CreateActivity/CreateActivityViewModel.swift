@@ -131,7 +131,7 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
     // 提交活动到LeanCloud
     func createActivity() {
         // 调用 LeanCloudService 的静态方法来创建活动
-        LeanCloudService.createActivity(activityName: activityName, selectedTags: selectedTags, activityTime: activityTime, activityDescription: activityDescription, hostId: hostId, location: location, selectedImage: selectedImage, participantsCount: participantsCount) { [weak self] success, message in
+        LeanCloudService.createActivity(activityName: activityName, selectedTags: selectedTags, activityTime: activityTime, activityDescription: activityDescription, hostId: hostId, location: location, locationName: selectedLocationName, selectedImage: selectedImage, participantsCount: participantsCount) { [weak self] success, message in
             guard let self = self else { return }
             
             // 根据结果更新 UI
