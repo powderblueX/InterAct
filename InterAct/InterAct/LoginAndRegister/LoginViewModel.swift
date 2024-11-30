@@ -1,6 +1,6 @@
 //
 //  LoginViewModel.swift
-//  EcoStep
+//  InterAct
 //
 //  Created by admin on 2024/11/23.
 //
@@ -15,8 +15,6 @@ class LoginViewModel: ObservableObject {
     @Published var alertMessage: String = ""// 提示框显示的消息
     @Published var showAlert: Bool = false // 用来控制提示框显示
     
-    private let userModel = UserModel()
-    
     func login() {
         guard !username.isEmpty else {
             errorMessage = "用户名不能为空"
@@ -30,7 +28,7 @@ class LoginViewModel: ObservableObject {
         isLogining = true
         errorMessage = nil
         
-        userModel.login(username: username, password: password) { [weak self] result in
+        LeanCloudService.login(username: username, password: password) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLogining = false
                 switch result {

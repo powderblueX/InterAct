@@ -33,7 +33,7 @@ struct ChangePasswordView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .foregroundColor(.white)
-                    .background(Color.blue)
+                    .background(viewModel.newPassword.isEmpty || viewModel.currentPassword.isEmpty ? Color.gray : Color.blue)
                     .cornerRadius(8)
             }
             .disabled(viewModel.newPassword.isEmpty || viewModel.currentPassword.isEmpty)

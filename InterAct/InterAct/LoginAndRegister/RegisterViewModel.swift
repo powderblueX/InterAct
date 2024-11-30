@@ -1,6 +1,6 @@
 //
 //  RegisterViewModel.swift
-//  EcoStep
+//  InterAct
 //
 //  Created by admin on 2024/11/23.
 //
@@ -19,11 +19,6 @@ class RegisterViewModel: ObservableObject {
     @Published var showAlert: Bool = false // 用来控制提示框显示
     
     @Published var confirmPassword: String = ""
-    private var userModel: UserModel
-    
-    init(userModel: UserModel = UserModel()) {
-        self.userModel = userModel
-    }
     
     func register(isFormValid: Bool) {
         // 清除之前的错误信息
@@ -42,7 +37,7 @@ class RegisterViewModel: ObservableObject {
         
         // 开始注册
         isRegistering = true
-        userModel.register(username: username, password: password, email: email, gender: gender, birthday: birthday) { result in
+        LeanCloudService.register(username: username, password: password, email: email, gender: gender, birthday: birthday) { result in
             DispatchQueue.main.async {
                 self.isRegistering = false
                 switch result {

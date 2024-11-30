@@ -38,47 +38,22 @@ class EditBaseUserInfoViewModel: ObservableObject {
 
     // 保存修改到 LeanCloud
     func saveChanges(completion: @escaping (Bool) -> Void) {
-        guard !newUsername.isEmpty, !newEmail.isEmpty else {
-            alertType = .error("用户名和邮箱不能为空")
-            completion(false)
-            return
-        }
-
-        guard let objectId = objectId else {
-            alertType = .error("用户未登录")
-            completion(false)
-            return
-        }
-
-        do {
-            let user = LCObject(className: "_User", objectId: LCString(objectId))
-            try user.set("username", value: newUsername)
-            try user.set("email", value: newEmail)
-            try user.set("birthday", value: LCDate(birthday))
-            try user.set("gender", value: gender)
-
-            user.save { result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .success:
-                        self.isUsernameEmailUpdated = true
-                        self.alertType = .success("基本信息更新成功")
-                        // 更新 UserDefaults
-                        UserDefaults.standard.set(self.newUsername, forKey: "username")
-                        UserDefaults.standard.set(self.newEmail, forKey: "email")
-                        UserDefaults.standard.set(self.birthday, forKey: "birthday")
-                        UserDefaults.standard.set(self.gender, forKey: "gender")
-                        completion(true)
-                    case .failure(let error):
-                        self.alertType = .error("保存失败：\(error.localizedDescription)")
-                        completion(false)
-                    }
-                }
-            }
-        } catch {
+        LeanCloudService.saveChanges(objectId: objectId, newUsername: newUsername, newEmail: newEmail, birthday: birthday, gender: gender) { [weak self] success, errorMessage in
             DispatchQueue.main.async {
-                self.alertType = .error("保存失败：\(error.localizedDescription)")
-                completion(false)
+                if success {
+                    // 更新 UI
+                    self?.isUsernameEmailUpdated = true
+                    self?.alertType = .success("基本信息更新成功")
+                    
+                    // 更新 UserDefaults
+                    UserDefaults.standard.set(self?.newUsername, forKey: "username")
+                    UserDefaults.standard.set(self?.newEmail, forKey: "email")
+                    UserDefaults.standard.set(self?.birthday, forKey: "birthday")
+                    UserDefaults.standard.set(self?.gender, forKey: "gender")
+                } else {
+                    // 处理错误
+                    self?.alertType = .error(errorMessage ?? "保存失败")
+                }
             }
         }
     }

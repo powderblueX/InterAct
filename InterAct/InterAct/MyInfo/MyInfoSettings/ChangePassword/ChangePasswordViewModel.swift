@@ -21,6 +21,12 @@ class ChangePasswordViewModel: ObservableObject {
 
     // 更新密码逻辑
     func updatePassword() {
+        guard let objectId = UserDefaults.standard.string(forKey: "objectId") else {
+            // TODO: 用户登出
+            self.alertType = .error("用户未登录，无法获取用户ID")
+            return
+        }
+        
         // 从 Keychain 中读取保存的密码
         guard let savedPassword = KeychainHelper.loadPassword() else {
             alertType = .error("无法从 Keychain 中读取当前密码，请重新登录")
@@ -39,36 +45,17 @@ class ChangePasswordViewModel: ObservableObject {
             return
         }
         
-        // 当前密码验证通过，执行更新逻辑
-        updatePasswordInLeanCloud(newPassword: newPassword)
-    }
-
-    private func updatePasswordInLeanCloud(newPassword: String) {
-        guard let objectId = UserDefaults.standard.string(forKey: "objectId") else {
-            self.alertType = .error("用户未登录，无法获取用户ID")
-            return
-        }
-        
-        do {
-            let user = LCObject(className: "_User", objectId: LCString(objectId))
-            try user.set("password", value: newPassword)
-            
-            user.save { result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .success:
-                        self.isPasswordUpdated = true
-                        self.alertType = .success("密码更新成功")
-                        // 同步保存新密码到 Keychain
-                        self.saveNewPasswordToKeychain(newPassword)
-                    case .failure(let error):
-                        self.alertType = .error("更新失败：\(error.localizedDescription)")
-                    }
-                }
-            }
-        } catch {
+        // 当前密码验证通过，调用 LeanCloudService 更新密码
+        LeanCloudService.updatePassword(objectId: objectId, newPassword: newPassword) { [weak self] success, errorMessage in
             DispatchQueue.main.async {
-                self.alertType = .error("更新失败：\(error.localizedDescription)")
+                if success {
+                    self?.isPasswordUpdated = true
+                    self?.alertType = .success("密码更新成功")
+                    // 同步保存新密码到 Keychain
+                    self?.saveNewPasswordToKeychain(self?.newPassword ?? "")
+                } else {
+                    self?.alertType = .error(errorMessage ?? "密码更新失败")
+                }
             }
         }
     }

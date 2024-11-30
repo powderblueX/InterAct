@@ -130,83 +130,14 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
     
     // 提交活动到LeanCloud
     func createActivity() {
-        guard let hostId = hostId else {
-            // TODO: 退出登录处理
-            alertMessage = "用户数据出错，请重新登录"
-            showAlert = true
-            return
-        }
-        
-        // 检查数据是否有效
-        if activityName.isEmpty {
-            alertMessage = "标题不能为空"
-            showAlert = true
-            return
-        }
-        
-        // 检查时间是否合适
-        if activityTime < Date() {
-            alertMessage = "时间不合适"
-            showAlert = true
-            return
-        }
-        
-        // 检查数据是否有效
-        if activityDescription.isEmpty {
-            alertMessage = "简介不能为空"
-            showAlert = true
-            return
-        }
-        
-        let activity = LCObject(className: "Activity")
-        activity["activityName"] = LCString(activityName)
-        activity["interestTag"] = LCArray(selectedTags.map { LCString($0) })
-        activity["activityTime"] = LCDate(activityTime)
-        activity["activityDescription"] = LCString(activityDescription)
-        activity["hostId"] = LCString(hostId)
-        activity["participantsCount"] = LCNumber(integerLiteral: participantsCount)
-        activity["participantIds"] = LCArray([hostId]) // 参与者 ID 数组（可以根据用户数据填充）
-        activity["location"] = LCGeoPoint(latitude: location?.latitude ?? 39.90750000, longitude: location?.longitude ?? 116.38805555)
-        
-        // 将 UIImage 转换为 JPEG 数据
-        if let image = selectedImage, let imageData = image.jpegData(compressionQuality: 0.8) {
-            let file = LCFile(payload: .data(data: imageData))
-                
-            file.save { [self] result in
-                switch result {
-                case .success:
-                    // 获取文件的 URL 字符串
-                    if let fileUrl = file.url?.value {
-                        let secureURL = fileUrl.replacingOccurrences(of: "http://", with: "https://")
-                        activity["image"] = LCString(secureURL) // 保存文件 URL 到 LeanCloud
-                        saveActivity(activity)  // 上传活动信息
-                    } else {
-                        self.alertMessage = "图片上传失败，无法获取文件 URL"
-                        self.showAlert = true
-                    }
-                case .failure(let error):
-                    self.alertMessage = "图片上传失败: \(error.localizedDescription)"
-                    self.showAlert = true
-                }
-            }
-        } else {
-            // 如果没有选择图片，直接保存活动信息
-            saveActivity(activity)
-        }
-    }
-    
-    func saveActivity(_ activity: LCObject) {
-        // 保存活动信息到 LeanCloud
-        activity.save { result in
-            switch result {
-            case .success:
-                self.isCreateSuccessfully = true
-                self.alertMessage = "活动发布成功！"
-                self.showAlert = true
-            case .failure(let error):
-                self.alertMessage = "发布失败: \(error.localizedDescription)"
-                self.showAlert = true
-            }
+        // 调用 LeanCloudService 的静态方法来创建活动
+        LeanCloudService.createActivity(activityName: activityName, selectedTags: selectedTags, activityTime: activityTime, activityDescription: activityDescription, hostId: hostId, location: location, selectedImage: selectedImage, participantsCount: participantsCount) { [weak self] success, message in
+            guard let self = self else { return }
+            
+            // 根据结果更新 UI
+            self.alertMessage = message
+            self.showAlert = true
+            self.isCreateSuccessfully = success
         }
     }
     

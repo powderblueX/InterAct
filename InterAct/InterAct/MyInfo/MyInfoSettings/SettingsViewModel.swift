@@ -15,7 +15,7 @@ class SettingsViewModel: ObservableObject {
     
     func logout() {
         // 清除 LeanCloud 的会话
-        leanCloudService.logout()
+        LeanCloudService.logout()
         // 清除 Keychain 中的密码
         KeychainHelper.deletePassword()
         

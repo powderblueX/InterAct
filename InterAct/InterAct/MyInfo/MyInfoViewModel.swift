@@ -1,6 +1,6 @@
 //
 //  MyInfoViewModel.swift
-//  EcoStep
+//  InterAct
 //
 //  Created by admin on 2024/11/23.
 //
@@ -13,9 +13,7 @@ class MyInfoViewModel: ObservableObject {
     @Published var userInfo: MyInfoModel?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    
-    private let leanCloudService = LeanCloudService()
-    
+
     init() {
         fetchUserInfo()
     }
@@ -40,7 +38,7 @@ class MyInfoViewModel: ObservableObject {
         }
         
         // 调用 LeanCloudService 获取用户信息
-        leanCloudService.fetchUserInfo(objectId: objectId, username: username) { [weak self] result in
+        LeanCloudService.fetchUserInfo(objectId: objectId, username: username) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 switch result {
@@ -65,7 +63,7 @@ class MyInfoViewModel: ObservableObject {
         }
         
         // 调用 LeanCloudService 更新用户信息
-        leanCloudService.updateUserInfo(objectId: objectId, newInfo: newInfo) { [weak self] result in
+        LeanCloudService.updateUserInfo(objectId: objectId, newInfo: newInfo) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 switch result {

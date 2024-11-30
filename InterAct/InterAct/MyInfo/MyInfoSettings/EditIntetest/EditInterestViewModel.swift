@@ -57,6 +57,25 @@ class EditIntereViewModel: ObservableObject {
             completion(false)
             return
         }
+        
+        guard !selectedInterests.isEmpty else {
+            self.alertType = .error("兴趣标签不能为空")
+            return
+        }
+        
+        // 向 LeanCloud 保存修改
+        LeanCloudService.saveChanges(objectId: "用户对象ID", selectedInterests: selectedInterests) { success, message in
+            if success {
+                // 成功后更新相关状态
+                self.isUsernameEmailUpdated = true
+                self.alertType = .success(message)
+                // 更新 UserDefaults
+                UserDefaults.standard.set(self.selectedInterests, forKey: "interest")
+            } else {
+                // 失败后弹出错误信息
+                self.alertType = .error(message)
+            }
+        }
 
         do {
             let user = LCObject(className: "_User", objectId: LCString(objectId))

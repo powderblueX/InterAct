@@ -55,133 +55,32 @@ class RecommendedActivitiesViewModel: NSObject, ObservableObject, CLLocationMana
     
     // 根据兴趣标签从数据库获取活动
     func fetchActivitiesByInterests(interests: [String]) {
-        let currentDate = Date()
-        print("--------")
-        print(currentDate)
-        print("--------")
-        // 使用 LeanCloud SDK 查询活动
-        let query = LCQuery(className: "Activity")
-        
-        // 过滤兴趣标签匹配的活动
-        query.whereKey("interestTag", .containedIn(interests))  // 查找兴趣标签包含在给定数组中的活动
-        
-        // 过滤活动时间晚于当前时间的活动
-        query.whereKey("activityTime", .greaterThan(LCDate(currentDate))) // 活动时间必须在当前时间之后
-        
-        query.find { [self] result in
-            switch result {
-            case .success(let objects):
-                // 将查询结果转化为 Activity 对象
-                let fetchedActivities = objects.compactMap { object -> Activity? in
-                    guard let activityName = object["activityName"]?.stringValue,
-                          let interestTag = object["interestTag"]?.arrayValue,
-                          let activityTime = object["activityTime"]?.dateValue,
-                          let activityDescription = object["activityDescription"]?.stringValue,
-                          let hostId = object["hostId"]?.stringValue,
-                          let participantsCount = object["participantsCount"]?.intValue,
-                          let participantIds = object["participantIds"]?.arrayValue,
-                          let location = object["location"] as? LCGeoPoint
-                    else {
-                        return nil
-                    }
-                    
-                    let imageURLString = object["image"]?.stringValue ?? ""
-                    // 如果 avatarURLString 有值，尝试转换为 URL
-                    let image = imageURLString.isEmpty ? nil : URL(string: imageURLString)
-                    
-                    // 创建 Activity 对象
-                    return Activity(
-                        id: object.objectId!.stringValue ?? "",
-                        activityName: activityName,
-                        interestTag: interestTag as? Array<String> ?? [],
-                        activityTime: activityTime,
-                        activityDescription: activityDescription,
-                        hostId: hostId,
-                        participantsCount: participantsCount,
-                        participantIds: participantIds as? Array<String> ?? [],
-                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
-                        image: image  // 此处根据实际情况处理图片
-                    )
-                }
-                
-                // 更新活动列表
-                DispatchQueue.main.async {
-                    self.activities = fetchedActivities
-                    print(self.activities)
-                }
-                
-            case .failure(let error):
-                // 错误处理
-                DispatchQueue.main.async {
-                    print("查询失败: \(error.localizedDescription)")
-                }
+        // 调用 LeanCloudService 来获取活动
+        LeanCloudService.fetchActivitiesByInterests(interests: interests) { [weak self] fetchedActivities in
+            guard let self = self else { return }
+            
+            // 更新活动列表
+            if let activities = fetchedActivities {
+                self.activities = activities
+                print("Fetched Activities: \(self.activities)")
+            } else {
+                print("没有找到活动")
             }
         }
     }
     
     // 加载所有活动数据（如果没有兴趣标签）
     func fetchAllActivities() {
-        let currentDate = Date()
-        // TODO: 校准时间
-//        let dateFormatter = DateFormatter()
-//        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-//        dateFormatter.timeZone = TimeZone.current // 设置为当前设备的时区
-//        // 将 UTC 时间转换为本地时间
-//        let localDateString = dateFormatter.string(from: currentDate)
-        
-        // 使用 LeanCloud SDK 查询所有活动
-        let query = LCQuery(className: "Activity")
-        
-        // 过滤活动时间晚于当前时间的活动
-        query.whereKey("activityTime", .greaterThan(LCDate(currentDate))) // 活动时间必须在当前时间之后
-        
-        query.find { result in
-            switch result {
-            case .success(let objects):
-                // 将查询结果转化为 Activity 对象
-                let fetchedActivities = objects.compactMap { object -> Activity? in
-                    guard let activityName = object["activityName"]?.stringValue,
-                          let interestTag = object["interestTag"]?.arrayValue,
-                          let activityTime = object["activityTime"]?.dateValue,
-                          let activityDescription = object["activityDescription"]?.stringValue,
-                          let hostId = object["hostId"]?.stringValue,
-                          let participantsCount = object["participantsCount"]?.intValue,
-                          let participantIds = object["participantIds"]?.arrayValue,
-                          let location = object["location"] as? LCGeoPoint
-                    else {
-                        return nil
-                    }
-                    
-                    let imageURLString = object["image"]?.stringValue ?? ""
-                    // 如果 avatarURLString 有值，尝试转换为 URL
-                    let image = imageURLString.isEmpty ? nil : URL(string: imageURLString)
-                    
-                    // 创建 Activity 对象
-                    return Activity(
-                        id: object.objectId!.stringValue ?? "",
-                        activityName: activityName,
-                        interestTag: interestTag as? Array<String> ?? [],
-                        activityTime: activityTime,
-                        activityDescription: activityDescription,
-                        hostId: hostId,
-                        participantsCount: participantsCount,
-                        participantIds: participantIds as? Array<String> ?? [],
-                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
-                        image: image  // 此处根据实际情况处理图片
-                    )
-                }
-                
-                // 更新活动列表
-                DispatchQueue.main.async {
-                    self.activities = fetchedActivities
-                    print(self.activities)
-                }
-                
-            case .failure(let error):
-                // 错误处理
-                DispatchQueue.main.async {
-                    print("查询失败: \(error.localizedDescription)")
-                }
+        // 调用 LeanCloudService 来获取活动
+        LeanCloudService.fetchAllActivities() { [weak self] fetchedActivities in
+            guard let self = self else { return }
+            
+            // 更新活动列表
+            if let activities = fetchedActivities {
+                self.activities = activities
+                print("Fetched Activities: \(self.activities)")
+            } else {
+                print("没有找到活动")
             }
         }
     }
