@@ -7,15 +7,16 @@
 
 import SwiftUI
 
-struct MessageRow: View {
+struct MessageRowView: View {
     let message: Message
     let isCurrentUser: Bool
+    let chat: PrivateChat
     
     var body: some View {
         HStack {
             if isCurrentUser {
                 // 显示对方头像
-                AsyncImage(url: URL(string: "https://example.com/avatar/\(message.senderId)")) { image in
+                AsyncImage(url: URL(string: chat.partnerAvatarURL)) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
                     Image(systemName: "person.circle.fill").resizable()

@@ -14,45 +14,49 @@ struct PrivateChatListView: View {
     var body: some View {
         NavigationView {
             List(viewModel.privateChats, id: \.partnerId) { chat in
-                HStack {
-                    // 显示对方头像
-                    if let avatarURL = URL(string: chat.partnerAvatarURL), !chat.partnerAvatarURL.isEmpty {
-                        AsyncImage(url: avatarURL) { image in
-                            image.resizable()
-                                .scaledToFill()
-                                .frame(width: 50, height: 50)
-                                .clipShape(Circle())
-                        } placeholder: {
+                VStack{
+                    HStack {
+                        // 显示对方头像
+                        if let avatarURL = URL(string: chat.partnerAvatarURL), !chat.partnerAvatarURL.isEmpty {
+                            AsyncImage(url: avatarURL) { image in
+                                image.resizable()
+                                    .scaledToFill()
+                                    .frame(width: 50, height: 50)
+                                    .clipShape(Circle())
+                            } placeholder: {
+                                Image(systemName: "person.crop.circle.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 50, height: 50)
+                                    .foregroundColor(.gray)
+                            }
+                        } else {
                             Image(systemName: "person.crop.circle.fill")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 50, height: 50)
+                                .foregroundColor(.gray)
+                        }
+                        
+                        VStack(alignment: .leading) {
+                            Text(chat.partnerUsername)
+                                .font(.headline)
+                        }
+                        
+                        Spacer()
+                        
+                        NavigationLink(destination: PrivateChatView(viewModel: PrivateChatViewModel(currentUserId: viewModel.currentUserId, recipientUserId: chat.partnerId))) {
                         }
                     }
-                    
-                    VStack(alignment: .leading) {
-                        Text(chat.partnerUsername)
-                            .font(.headline)
-                        Text(chat.latestMessage)
-                            .font(.subheadline)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    }
-                    
-                    Spacer()
-                    
-                    Text(formatDate(chat.latestMessageTimestamp))
-                        .font(.caption)
-                        .foregroundColor(.gray)
                 }
-                .padding()
             }
-            .navigationTitle("私聊")
+            .navigationTitle("私信列表")
+            
             .onAppear {
                 viewModel.fetchPrivateChats()  // 获取私聊列表
             }
-            .alert(item: $viewModel.errorMessage) { error in
-                Alert(title: Text("错误"), message: Text(error), dismissButton: .default(Text("确定")))
+            .alert(isPresented: $viewModel.isError) {
+                Alert(title: Text("错误"), message: Text(viewModel.errorMessage ?? ""), dismissButton: .default(Text("确定")))
             }
         }
     }
@@ -66,3 +70,10 @@ struct PrivateChatListView: View {
 }
 
 
+extension DateFormatter {
+    static var shortTimeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }
+}

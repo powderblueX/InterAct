@@ -9,7 +9,11 @@ import Foundation
 import LeanCloud
 import UIKit
 
+// TODO: 是否封装代码
+
 class PrivateChatViewModel: ObservableObject {
+    @Published var chat: PrivateChat? = PrivateChat(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "")
+    
     // 当前用户
     let currentUserId: String
     let recipientUserId: String
@@ -33,6 +37,20 @@ class PrivateChatViewModel: ObservableObject {
     init(currentUserId: String, recipientUserId: String) {
         self.currentUserId = currentUserId
         self.recipientUserId = recipientUserId
+    }
+    
+    func fetchUserInfo(for userId: String) {
+        // 调用 LeanCloudService 来获取用户信息（用户名和头像URL）
+        LeanCloudService.fetchUserInfo(for: userId) { [weak self] username, avatarURL in
+            // 更新 PrivateChat 实例
+            if let chat = self?.chat {
+                self?.chat = PrivateChat(
+                    partnerId: chat.partnerId,
+                    partnerUsername: username,
+                    partnerAvatarURL: avatarURL
+                )
+            }
+        }
     }
     
     // 打开聊天会话
@@ -126,9 +144,9 @@ class PrivateChatViewModel: ObservableObject {
         }
     }
     
-    // 模拟选择图片
+    // TODO: 选择图片
     func selectImage() {
-        // 这里可以集成图片选择器，比如 UIImagePickerController 或其他第三方库
+        
     }
     
     // 发送图片消息

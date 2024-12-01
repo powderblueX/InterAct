@@ -51,7 +51,7 @@ struct LeanCloudService {
         do {
             try user.set("gender", value: LCString(gender))
             try user.set("birthday", value: LCDate(birthday))
-            
+            try user.set("exp", value: LCNumber(integerLiteral: 0))
             // 注册用户
             user.signUp { result in
                 switch result {
@@ -88,6 +88,7 @@ struct LeanCloudService {
                 let birthday = userObject.birthday?.dateValue ?? Date()
                 let gender = userObject.gender?.stringValue ?? ""
                 let interest: [String] = userObject.interest?.arrayValue as? [String] ?? ["无🚫"]
+                let exp: Int = userObject.exp?.intValue ?? 0
                 let avatarURLString = userObject.avatarURL?.stringValue ?? ""
                 // 如果 avatarURLString 有值，尝试转换为 URL
                 let avatarURL = avatarURLString.isEmpty ? nil : URL(string: avatarURLString)
@@ -100,6 +101,7 @@ struct LeanCloudService {
                     birthday: birthday,
                     gender: gender,
                     interest: interest,
+                    exp: exp,
                     posts: [], // 默认为空数组，后续可根据需要进行填充
                     favorites: [] // 同上
                 )
@@ -533,6 +535,26 @@ struct LeanCloudService {
     }
     
     
+    // 获取私信对方的信息（头像和用户名）
+    static func fetchHostInfo(for userId: String, completion: @escaping (String, String, String, Int) -> Void) {
+        let query = LCQuery(className: "_User")
+        query.whereKey("objectId", .equalTo(userId))
+        query.getFirst { result in
+            switch result {
+            case .success(let object):
+                let username = object["username"]?.stringValue ?? "未知用户"
+                let avatarURL = object["avatarURL"]?.stringValue ?? ""
+                let gender = object["gender"]?.stringValue ?? ""
+                let exp = object["exp"]?.intValue ?? 0
+                completion(username, avatarURL, gender, exp)
+            case .failure(let error):
+                print("获取用户信息失败: \(error.localizedDescription)")
+                completion("加载中...", "加载中...", "加载中...", 0) // 默认返回值
+            }
+        }
+    }
+    
+    
     // 创建活动
     static func createActivity(activityName: String, selectedTags: [String], activityTime: Date, activityDescription: String, hostId: String?, location: CLLocationCoordinate2D?, locationName: String, selectedImage: UIImage?, participantsCount: Int, completion: @escaping (Bool, String) -> Void) {
         guard let hostId = hostId else {
@@ -604,6 +626,58 @@ struct LeanCloudService {
                 case .failure(let error):
                     completion(false, "发布失败: \(error.localizedDescription)")
                 }
+            }
+        }
+    }
+    
+    
+    // 获取私信列表
+    static func fetchPrivateChats(for currentUserId: String, completion: @escaping (Result<[PrivateChat], Error>) -> Void) {
+        let query = LCQuery(className: "_Conversation")
+        query.whereKey("m", .containedIn([currentUserId]))  // 确保查询包含当前用户
+        query.find { result in
+            switch result {
+            case .success(let conversations):
+                var chats: [PrivateChat] = []
+                for conversation in conversations {
+                    // 获取对方的ID（排除当前用户）
+                    if let clientIDs = conversation["m"]?.arrayValue as? [String] {
+                        if let partnerId = clientIDs.first(where: { $0 != currentUserId }) {
+                            LeanCloudService.fetchUserInfo(for: partnerId) { username, avatarURL in
+                                let chat = PrivateChat(
+                                    partnerId: partnerId,
+                                    partnerUsername: username,
+                                    partnerAvatarURL: avatarURL
+                                )
+                                chats.append(chat)
+                                // 返回结果
+                                if chats.count == conversations.count {
+                                    completion(.success(chats))
+                                }
+                            }
+                        }
+                    }
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    
+    // 获取私信对方的信息（头像和用户名）
+    static func fetchUserInfo(for userId: String, completion: @escaping (String, String) -> Void) {
+        let query = LCQuery(className: "_User")
+        query.whereKey("objectId", .equalTo(userId))
+        query.getFirst { result in
+            switch result {
+            case .success(let object):
+                let username = object["username"]?.stringValue ?? "未知用户"
+                let avatarURL = object["avatarURL"]?.stringValue ?? ""
+                completion(username, avatarURL)
+            case .failure(let error):
+                print("获取用户信息失败: \(error.localizedDescription)")
+                completion("未知用户", "") // 默认返回值
             }
         }
     }

@@ -18,8 +18,7 @@ struct PrivateChatView: View {
     
     var body: some View {
         VStack {
-            // TODO: 顶部显示对方的用户名
-            Text(viewModel.recipientUserId) // 假设对方的用户名是 recipientUserId
+            Text(viewModel.chat?.partnerUsername ?? "加载中...")
                 .font(.title)
                 .fontWeight(.bold)
                 .padding()
@@ -27,7 +26,7 @@ struct PrivateChatView: View {
             // 消息列表
             ScrollView {
                 ForEach(viewModel.messages) { message in
-                    MessageRow(message: message, isCurrentUser: message.senderId == viewModel.currentUserId)
+                    MessageRowView(message: message, isCurrentUser: message.senderId != viewModel.currentUserId, chat: viewModel.chat ?? PrivateChat(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: ""))
                 }
             }
             
@@ -61,6 +60,7 @@ struct PrivateChatView: View {
             .padding()
         }
         .onAppear {
+            viewModel.fetchUserInfo(for: viewModel.recipientUserId)
             viewModel.openChatSession()
         }
         .alert(isPresented: Binding<Bool>(

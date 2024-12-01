@@ -15,6 +15,7 @@ struct MyInfoModel: Identifiable {
     var birthday: Date      // 用户生日
     var gender: String      // 用户性别
     var interest: Array<String> // 用户兴趣
+    var exp: Int            // 用户声望
     var posts: [Post]       // 用户发帖记录
     var favorites: [Post]   // 用户收藏的帖子
 

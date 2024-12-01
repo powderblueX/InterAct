@@ -18,86 +18,95 @@ struct MyInfoView: View {
 
     var body: some View {
         NavigationView {
-            if viewModel.isLoading {
-                ProgressView("加载中...")
-            } else if let userInfo = viewModel.userInfo {
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // 用户头像
-                        if let avatarURL = userInfo.avatarURL {
-                            KFImage(URL(string: avatarURL.absoluteString))
-                                .placeholder {
-                                    Image(systemName: "person.crop.circle.fill")
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 100, height: 100)
-                                        .clipShape(Circle())
-                                        .foregroundColor(.gray)
-                                }
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 100, height: 100)
-                                .clipShape(Circle())
-                                .onTapGesture {
-                                    // 点击头像，显示大图
-                                    isAvatarSheetPresented = true
-                                }
-                                .contextMenu {
-                                    // 长按头像弹出保存选项
-                                    Button(action: {
-                                        showSaveImageAlert = true
-                                    }) {
-                                        Label("保存图片", systemImage: "square.and.arrow.down")
+            VStack(alignment: .leading, spacing: 37){
+                if viewModel.isLoading {
+                    ProgressView("加载中...")
+                } else if let userInfo = viewModel.userInfo {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // 用户头像
+                            if let avatarURL = userInfo.avatarURL {
+                                KFImage(URL(string: avatarURL.absoluteString))
+                                    .placeholder {
+                                        Image(systemName: "person.crop.circle.fill")
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 100, height: 100)
+                                            .clipShape(Circle())
+                                            .foregroundColor(.gray)
                                     }
-                                }
-                        } else {
-                            // 如果 avatarURL 为空，显示默认头像
-                            Image(systemName: "person.crop.circle.fill")
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 100, height: 100)
-                                .clipShape(Circle())
-                                .foregroundColor(.gray)  // 默认头像颜色
-                        }
-                        
-                        // 用户名、邮箱
-                        Text(userInfo.username).font(.title)
-                        Text(userInfo.email).font(.subheadline).foregroundColor(.gray)
-                        
-                        // 用户性别和生日
-                        Text("性别：\(userInfo.gender)")
-                        Text("生日：\(userInfo.birthday, style: .date)").environment(\.locale, Locale(identifier: "zh_CN"))
-                        
-                        Text("我的兴趣标签：\(userInfo.interest.joined(separator: "、"))")
-                        
-                    
-                        HStack{
-                            // 用户帖子和收藏
-                            Section(header: Text("我的帖子")) {
-                                ForEach(userInfo.posts) { post in
-                                    NavigationLink(destination: PostDetailView(post: post)) {
-                                        Text(post.title)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                                    .onTapGesture {
+                                        // 点击头像，显示大图
+                                        isAvatarSheetPresented = true
                                     }
-                                }
+                                    .contextMenu {
+                                        // 长按头像弹出保存选项
+                                        Button(action: {
+                                            showSaveImageAlert = true
+                                        }) {
+                                            Label("保存图片", systemImage: "square.and.arrow.down")
+                                        }
+                                    }
+                            } else {
+                                // 如果 avatarURL 为空，显示默认头像
+                                Image(systemName: "person.crop.circle.fill")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                                    .foregroundColor(.gray)  // 默认头像颜色
                             }
                             
-                            Section(header: Text("我的收藏")) {
-                                ForEach(userInfo.favorites) { post in
-                                    NavigationLink(destination: PostDetailView(post: post)) {
-                                        Text(post.title)
+                            // 用户名、邮箱
+                            Text(userInfo.username).font(.title)
+                            Text(userInfo.email).font(.subheadline).foregroundColor(.gray)
+                            
+                            // 用户性别和生日
+                            Text("性别：\(userInfo.gender)")
+                            Text("生日：\(userInfo.birthday, style: .date)").environment(\.locale, Locale(identifier: "zh_CN"))
+                            
+                            // 用户的兴趣标签
+                            Text("我的兴趣标签：\(userInfo.interest.joined(separator: "、"))")
+                            
+                            // 用户的声望
+                            if userInfo.exp > 0 {
+                                Text("我的声望：+\(userInfo.exp)")
+                            } else {
+                                Text("我的声望：\(userInfo.exp)")
+                            }
+                            
+                            HStack{
+                                // 用户帖子和收藏
+                                Section(header: Text("我的帖子")) {
+                                    ForEach(userInfo.posts) { post in
+                                        NavigationLink(destination: PostDetailView(post: post)) {
+                                            Text(post.title)
+                                        }
+                                    }
+                                }
+                                
+                                Section(header: Text("我的收藏")) {
+                                    ForEach(userInfo.favorites) { post in
+                                        NavigationLink(destination: PostDetailView(post: post)) {
+                                            Text(post.title)
+                                        }
                                     }
                                 }
                             }
                         }
+                        .padding()
                     }
-                    .padding()
+                    .navigationBarItems(trailing: NavigationLink(destination: SettingsView(userInfo: $viewModel.userInfo)) {
+                        Image(systemName: "gearshape")
+                            .imageScale(.large)
+                    })
+                } else if let errorMessage = viewModel.errorMessage {
+                    Text("加载失败: \(errorMessage)")
                 }
-                .navigationBarItems(trailing: NavigationLink(destination: SettingsView(userInfo: $viewModel.userInfo)) {
-                    Image(systemName: "gearshape")
-                        .imageScale(.large)
-                })
-            } else if let errorMessage = viewModel.errorMessage {
-                Text("加载失败: \(errorMessage)")
             }
         }
         // 弹窗展示头像预览

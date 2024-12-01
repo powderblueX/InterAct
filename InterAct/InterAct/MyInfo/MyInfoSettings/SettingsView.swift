@@ -33,6 +33,10 @@ struct SettingsView: View {
                 }
             }
             
+            Section(header: Text("关于我们")) {
+                Text("版本：1.0.0")
+            }
+            
             // 退出登录
             Button("退出登录") {
                 viewModel.showLogoutAlert = true // 显示退出确认弹窗

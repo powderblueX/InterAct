@@ -12,21 +12,20 @@ import CoreLocation
 struct MapView: View {
     @Binding var selectedLocation: CLLocationCoordinate2D?
     @Binding var locationName: String
+    @State private var position: MapCameraPosition = .automatic
     
-    @State private var region: MKCoordinateRegion
+    @State private var region: MKCoordinateRegion = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555),
+        span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
+    )
     @State private var locationManager = CLLocationManager()
-//    @State private var userTrackingMode: MapUserTrackingMode = .follow // 使用 `.follow` 作为初始状态
     @State private var searchText: String = "" // 用于搜索的文本框
-    
+
     @Environment(\.dismiss) var dismiss
     
     init(selectedLocation: Binding<CLLocationCoordinate2D?>, locationName: Binding<String>) {
         self._selectedLocation = selectedLocation
         self._locationName = locationName
-        self._region = State(initialValue: MKCoordinateRegion(
-            center: selectedLocation.wrappedValue ?? CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555), // 默认位置
-            span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
-        ))
     }
     
     var body: some View {
@@ -38,16 +37,30 @@ struct MapView: View {
                 })
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
-                
+
                 GeometryReader { geometry in
-                    Map(coordinateRegion: $region, interactionModes: .all, showsUserLocation: true)
-                        .onTapGesture(coordinateSpace: .global) { _ in
-                            // 获取点击位置并更新选中的位置
-                            let tappedLocation = region.center
-                            selectedLocation = tappedLocation
-                            reverseGeocode(location: tappedLocation) // 获取选中位置的地址
-                        }
-                        .frame(width: geometry.size.width, height: geometry.size.height)
+                    Map(position: $position){
+                        Marker("活动位置", coordinate: selectedLocation ?? CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555))
+                            .tint(.orange)
+                    }
+                    .mapControls {
+                        MapUserLocationButton()
+                        MapCompass()
+                        MapScaleView()
+                    }
+                    .onMapCameraChange { context in
+                        region = context.region
+                    }
+                    .gesture(
+                        LongPressGesture(minimumDuration: 0.5) // 设定长按最短时间为 0.5 秒
+                            .onEnded { value in
+                                // 获取点击位置的坐标
+                                let tappedLocation = region.center
+                                selectedLocation = tappedLocation
+                                reverseGeocode(location: tappedLocation) // 获取地址
+                            }
+                    )
+                    .frame(width: geometry.size.width, height: geometry.size.height)
                 }
                 .frame(height: 500)  // 外部 frame 调整
                 
@@ -127,10 +140,11 @@ struct MapView: View {
                 // 更新地图的显示区域
                 self.region.center = location.coordinate
                 self.region.span = MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001) // 设置缩放级别
-
+                position = .automatic
                 // 如果需要，可以调用其他方法来重新渲染地图或进行其他操作
                 print("找到位置: \(placemark.name ?? "未知位置")")
             } else {
+                // TODO: 提示
                 print("没有找到相关位置")
             }
         }

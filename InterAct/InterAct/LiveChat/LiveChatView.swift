@@ -9,10 +9,25 @@ import SwiftUI
 
 struct LiveChatView: View {
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        TabView {
+            // 私信
+            PrivateChatListView()
+                .tabItem {
+                    Image(systemName: "person.2.fill")
+                    Text("私信")
+                }
+
+            // 群聊
+            MyInfoView()
+                .tabItem {
+                    Image(systemName: "person.3.fill")
+                    Text("群聊")
+                }
+        }
+        .accentColor(.green) // 设置底部导航栏图标的选中颜色
     }
 }
 
-#Preview {
-    LiveChatView()
-}
+//#Preview {
+//    LiveChatView()
+//}
