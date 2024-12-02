@@ -20,7 +20,7 @@ struct MapDetailView: View {
     
     init(activityLocation: CLLocationCoordinate2D, myCLLocation: CLLocationCoordinate2D, directions: Binding<[MKRoute]>) {
         self.activityLocation = activityLocation
-        self.myCLLocation = myCLLocation
+        self.myCLLocation = CLLocationCoordinate2D(latitude: 31.2800000, longitude: 121.2100000)
         _directions = directions
         self._mapRegion = State(initialValue: MKCoordinateRegion(
             center: myCLLocation,
@@ -31,20 +31,28 @@ struct MapDetailView: View {
     var body: some View {
         VStack {
             Map {
+                // TODO: 你的位置被写死了
                 MapCircle(center: activityLocation, radius: 10.0).foregroundStyle(.orange.opacity(0.3))
                 MapCircle(center: CLLocationCoordinate2D(latitude: 31.2800000, longitude: 121.2100000), radius: 10.0).foregroundStyle(.blue.opacity(0.3))
                 Marker("活动位置", coordinate: activityLocation).tint(.orange)
                 Marker("你的位置", coordinate: CLLocationCoordinate2D(latitude: 31.2800000, longitude: 121.2100000)).tint(.blue)
-                MapPolyline(coordinates: [activityLocation, CLLocationCoordinate2D(latitude: 31.2800000, longitude: 121.2100000)]).stroke(.red.opacity(0.5), lineWidth: 5)
+                // 如果用户位置有效，绘制从当前位置到活动地点的路径
+               // if let myCLLocation = myCLLocation {
+                // 使用MKRoute的polyline来绘制路径
+                ForEach(directions, id: \.self) { route in
+                    MapPolyline(coordinates: route.polyline.coordinates)
+                        .stroke(Color.blue, lineWidth: 3)
+                }
+               // }
             }
             .mapStyle(MapStyleModel.mapStyle)
             .onAppear {
                 getDirections()
             }
-            
-            if showRoute, !directions.isEmpty {
-                MapRoute(directions: directions)
-                    .padding(.top, 10)
+            .mapControls {
+                MapUserLocationButton()
+                MapCompass()
+                MapScaleView()
             }
         }
         .edgesIgnoringSafeArea(.all)
@@ -58,7 +66,8 @@ struct MapDetailView: View {
         let request = MKDirections.Request()
         request.source = MKMapItem(placemark: sourcePlacemark)
         request.destination = MKMapItem(placemark: destinationPlacemark)
-        request.transportType = .automobile
+        // TODO: 选项
+        request.transportType = .walking
         request.requestsAlternateRoutes = true
         
         let directions = MKDirections(request: request)
@@ -72,6 +81,28 @@ struct MapDetailView: View {
 }
 
 
+// CLLocationManagerDelegate 处理位置更新
+class LocationManagerDelegate: NSObject, CLLocationManagerDelegate {
+    var updateLocation: (CLLocationCoordinate2D) -> Void
+
+    init(updateLocation: @escaping (CLLocationCoordinate2D) -> Void) {
+        self.updateLocation = updateLocation
+        super.init()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.first {
+            // 更新用户当前位置
+            updateLocation(location.coordinate)
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("定位失败: \(error.localizedDescription)")
+    }
+}
+
+// 路径显示视图
 struct MapRoute: View {
     var directions: [MKRoute]
     
@@ -90,7 +121,6 @@ struct MapRoute: View {
     }
 }
 
-
 extension MKPolyline {
     var coordinates: [CLLocationCoordinate2D] {
         var coords = [CLLocationCoordinate2D]()
@@ -105,4 +135,3 @@ extension MKPolyline {
         return point.coordinate
     }
 }
-

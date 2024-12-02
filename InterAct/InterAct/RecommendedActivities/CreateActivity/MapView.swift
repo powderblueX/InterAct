@@ -12,14 +12,10 @@ import CoreLocation
 struct MapView: View {
     @Binding var selectedLocation: CLLocationCoordinate2D?
     @Binding var locationName: String
-    @State private var position: MapCameraPosition = .automatic
     
-    @State private var region: MKCoordinateRegion = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555),
-        span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
-    )
+    @StateObject var viewModel = MapViewModel()
+    
     @State private var locationManager = CLLocationManager()
-    @State private var searchText: String = "" // 用于搜索的文本框
 
     @Environment(\.dismiss) var dismiss
     
@@ -32,14 +28,14 @@ struct MapView: View {
         ScrollView{
             VStack {
                 // 地址搜索框
-                TextField("输入地址或地点名称", text: $searchText, onCommit: {
-                    searchAddress() // 按回车后进行搜索
+                TextField("输入地址或地点名称", text: $viewModel.searchText, onCommit: {
+                    viewModel.searchAddress(searchText: viewModel.searchText) // 按回车后进行搜索
                 })
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
 
                 GeometryReader { geometry in
-                    Map(position: $position){
+                    Map(position: $viewModel.position){
                         Marker("活动位置", coordinate: selectedLocation ?? CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555))
                             .tint(.orange)
                     }
@@ -49,15 +45,15 @@ struct MapView: View {
                         MapScaleView()
                     }
                     .onMapCameraChange { context in
-                        region = context.region
+                        viewModel.region = context.region
                     }
                     .gesture(
                         LongPressGesture(minimumDuration: 0.5) // 设定长按最短时间为 0.5 秒
                             .onEnded { value in
                                 // 获取点击位置的坐标
-                                let tappedLocation = region.center
-                                selectedLocation = tappedLocation
-                                reverseGeocode(location: tappedLocation) // 获取地址
+                                let tappedLocation = viewModel.region.center
+                                viewModel.selectedLocation = tappedLocation
+                                viewModel.reverseGeocode(location: tappedLocation) // 反向地理编码
                             }
                     )
                     .frame(width: geometry.size.width, height: geometry.size.height)
@@ -68,7 +64,7 @@ struct MapView: View {
                     Text("所选位置📍：")
                         .bold()
                     
-                    Text("\(locationName)")
+                    Text("\(viewModel.locationName)")
                         .bold()
                     
                     HStack {
@@ -87,14 +83,20 @@ struct MapView: View {
                 }
             }
         }
-//        .onAppear {
-//            locationManager.requestWhenInUseAuthorization()
-//            if CLLocationManager.locationServicesEnabled() {
-//                locationManager.delegate = locationManager as? CLLocationManagerDelegate
-//                locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-//                locationManager.startUpdatingLocation()
-//            }
-//        }
+        .overlay(
+            Group {
+                if let errorSearchMessage = viewModel.errorSearchMessage {
+                    Text(errorSearchMessage)
+                        .padding()
+                        .background(Color.black.opacity(0.7))
+                        .foregroundColor(.white)
+                        .clipShape(Capsule())
+                        .transition(.opacity)
+                        .animation(.easeInOut, value: viewModel.errorSearchMessage)
+                }
+            },
+            alignment: .top
+        )
         .onChange(of: locationManager.authorizationStatus) { oldValue, status in
             if status == .authorizedWhenInUse || status == .authorizedAlways {
                 DispatchQueue(label: "定位", qos: .background).async {
@@ -104,83 +106,24 @@ struct MapView: View {
                 }
             }
         }
-    }
-    
-    // TODO: MVVM 架构
-    // 搜索地址的函数
-    private func searchAddress() {
-        let geocoder = CLGeocoder()
-        
-        geocoder.geocodeAddressString(searchText) { (placemarks, error) in
-            if let error = error {
-                if let geocodeError = error as? CLError {
-                    switch geocodeError.code {
-                    case .locationUnknown:
-                        print("定位信息未知")
-                    case .denied:
-                        print("定位服务权限被拒绝")
-                    case .network:
-                        print("网络错误")
-                    default:
-                        print("其他错误: \(geocodeError.localizedDescription)")
-                    }
-                } else {
-                    // 如果是其他类型的错误，输出错误信息
-                    print("Geocoding failed: \(error.localizedDescription)")
+        .onChange(of: viewModel.selectedLocation) { oldLocation, newLocation in
+            if let newLocation = newLocation {
+                if selectedLocation == nil || selectedLocation?.latitude != newLocation.latitude || selectedLocation?.longitude != newLocation.longitude {
+                    self.selectedLocation = newLocation
                 }
-                return
-            }
-            
-            // 如果找到了地点
-            if let placemark = placemarks?.first, let location = placemark.location {
-                // 更新地图位置和显示的地名
-                self.selectedLocation = location.coordinate
-                self.locationName = placemark.name ?? "未知位置"
-                
-                // 更新地图的显示区域
-                self.region.center = location.coordinate
-                self.region.span = MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001) // 设置缩放级别
-                position = .automatic
-                // 如果需要，可以调用其他方法来重新渲染地图或进行其他操作
-                print("找到位置: \(placemark.name ?? "未知位置")")
-            } else {
-                // TODO: 提示
-                print("没有找到相关位置")
             }
         }
+        .onChange(of: viewModel.locationName) { oldLocationName, newLocationName in
+            self.locationName = newLocationName
+        }
     }
+    
 
-    
-    // 通过坐标获取地址的函数（反向地理编码）
-    private func reverseGeocode(location: CLLocationCoordinate2D) {
-        let geocoder = CLGeocoder()
-        let clLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-        
-        geocoder.reverseGeocodeLocation(clLocation) { (placemarks, error) in
-            if let error = error as? CLError {
-                // 判断错误类型
-                switch error.code {
-                case .locationUnknown:
-                    print("Location unknown")
-                case .denied:
-                    print("Permission denied")
-                case .network:
-                    print("Network error")
-                case .headingFailure:
-                    print("Heading failure")
-                default:
-                    print("Other error: \(error.localizedDescription)")
-                }
-                return
-            }
-            
-            if let placemark = placemarks?.first {
-                self.locationName = placemark.name ?? "Unknown Location"
-                print("Found location: \(placemark.name ?? "Unknown")")
-            } else {
-                print("No results found")
-            }
-        }
-    }
 }
 
+// 扩展 Optional<CLLocationCoordinate2D>，使其遵守 Equatable 协议
+extension CLLocationCoordinate2D: @retroactive Equatable {
+    public static func ==(lhs: CLLocationCoordinate2D, rhs: CLLocationCoordinate2D) -> Bool {
+        return lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude
+    }
+}
