@@ -13,6 +13,7 @@ struct MapDetailView: View {
     var activityLocation: CLLocationCoordinate2D
     var myCLLocation: CLLocationCoordinate2D
     @Binding var directions: [MKRoute]
+    @State var selectedTransportType: TransportType = .automobile
     
     @State private var mapRegion: MKCoordinateRegion
     @State private var showRoute = false
@@ -29,7 +30,7 @@ struct MapDetailView: View {
     }
     
     var body: some View {
-        VStack {
+        ZStack(alignment: .bottom) {
             Map {
                 // TODO: 你的位置被写死了
                 MapCircle(center: activityLocation, radius: 10.0).foregroundStyle(.orange.opacity(0.3))
@@ -37,13 +38,13 @@ struct MapDetailView: View {
                 Marker("活动位置", coordinate: activityLocation).tint(.orange)
                 Marker("你的位置", coordinate: CLLocationCoordinate2D(latitude: 31.2800000, longitude: 121.2100000)).tint(.blue)
                 // 如果用户位置有效，绘制从当前位置到活动地点的路径
-               // if let myCLLocation = myCLLocation {
+                // if let myCLLocation = myCLLocation {
                 // 使用MKRoute的polyline来绘制路径
                 ForEach(directions, id: \.self) { route in
                     MapPolyline(coordinates: route.polyline.coordinates)
                         .stroke(Color.blue, lineWidth: 3)
                 }
-               // }
+                // }
             }
             .mapStyle(MapStyleModel.mapStyle)
             .onAppear {
@@ -54,10 +55,24 @@ struct MapDetailView: View {
                 MapCompass()
                 MapScaleView()
             }
+            .onChange(of: selectedTransportType){
+                getDirections()
+            }
+
+
+            // 交通方式选择器
+            Picker("交通方式", selection: $selectedTransportType){
+                Image(systemName: "figure.walk").tag(TransportType.walking)
+                Image(systemName: "bicycle").tag(TransportType.cycling)
+                Image(systemName: "car").tag(TransportType.automobile)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.leading, 37)
+            .padding(.trailing, 37)
+            .padding(.bottom, 100)
         }
-        .edgesIgnoringSafeArea(.all)
     }
-    
+
     // 获取从当前位置到活动地点的路径
     func getDirections() {
         let sourcePlacemark = MKPlacemark(coordinate: myCLLocation)
@@ -66,8 +81,17 @@ struct MapDetailView: View {
         let request = MKDirections.Request()
         request.source = MKMapItem(placemark: sourcePlacemark)
         request.destination = MKMapItem(placemark: destinationPlacemark)
-        // TODO: 选项
-        request.transportType = .walking
+        
+        // 根据用户选择的交通方式设置请求类型
+        switch selectedTransportType {
+        case .walking:
+            request.transportType = .walking
+        case .cycling:
+            request.transportType = .automobile // 用汽车路径来模拟
+        case .automobile:
+            request.transportType = .automobile
+        }
+        
         request.requestsAlternateRoutes = true
         
         let directions = MKDirections(request: request)

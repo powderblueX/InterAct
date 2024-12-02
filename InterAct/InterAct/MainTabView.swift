@@ -18,10 +18,10 @@ struct MainTabView: View {
                 }
             
             // 附近活动
-            NearbyActivitiesView()
+            HeatmapView()
                 .tabItem {
                     Image(systemName: "map")
-                    Text("附近活动")
+                    Text("热力图")
                 }
 
             // 即时聊天
