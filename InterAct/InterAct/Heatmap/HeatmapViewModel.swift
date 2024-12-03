@@ -10,6 +10,7 @@ import CoreLocation
 import Combine
 import _MapKit_SwiftUI
 import LeanCloud
+import SwiftUI
 
 class HeatmapViewModel: ObservableObject {
     
@@ -19,23 +20,18 @@ class HeatmapViewModel: ObservableObject {
         center: CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555),
         span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
     )
-    
     @Published var activities: [HeatmapActivity] = []      // 单个活动数据
     @Published var regions: [HeatmapRegion] = []
+    @Published var selectedRegion: HeatmapRegion? = nil // 存储当前选中的热力区域
+    @Published var showDetails: Bool = false
+    
+    private var zoomScale: Double = 1.0 // 记录地图缩放比例
     
     // 初始化，加载示例数据
     init() {
         fetchActivitiesFromLeanCloud()
-    }
-    private func loadSampleData() {
-            activities = [
-                HeatmapActivity(id: "1", location: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), participatantCount: 50, interestTag: ["Health", "Sports"]),
-                HeatmapActivity(id: "2", location: CLLocationCoordinate2D(latitude: 37.7750, longitude: -122.4180), participatantCount: 30, interestTag: ["Dance", "Art"]),
-                HeatmapActivity(id: "3", location: CLLocationCoordinate2D(latitude: 37.7748, longitude: -122.4192), participatantCount: 100, interestTag: ["Technology", "Networking"]),
-                // 更多活动...
-            ]
-        print(activities)
-        }
+    } // TODO: onAppear?
+    
     func fetchActivitiesFromLeanCloud() {
         let query = LCQuery(className: "Activity")
         
@@ -90,5 +86,6 @@ class HeatmapViewModel: ObservableObject {
         // 转换成数组
         regions = Array(regionDict.values)
     }
+    
+    
 }
-

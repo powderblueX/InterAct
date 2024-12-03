@@ -37,7 +37,9 @@ struct HeatmapRegion: Identifiable, Hashable {
     
     /// 总参与人数
     var totalAttendees: Int {
-        activities.reduce(into: 0) { $0 + $1.participatantCount }
+        activities.reduce(into: 0) { result, activity in
+            result += activity.participatantCount
+        }
     }
     
     /// 活动种类统计
