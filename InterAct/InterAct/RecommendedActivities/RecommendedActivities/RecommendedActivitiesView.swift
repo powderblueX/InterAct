@@ -8,13 +8,10 @@
 import SwiftUI
 import CoreLocation
 
-struct RecommendActivities: View {
-    
+struct RecommendActivitiesView: View {
     @StateObject private var viewModel = RecommendedActivitiesViewModel()
     
-    @State private var showingCreateActivityView: Bool = false
-    
-    // TODO: 添加一个是否通过标签来选择 添加一个自己发布的活动置顶
+    // TODO: 添加一个自己发布的活动置顶
     var body: some View {
         NavigationView {
             ZStack {
@@ -31,10 +28,6 @@ struct RecommendActivities: View {
                             .padding(.vertical, 8)
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(8)
-                            .onChange(of: viewModel.searchText) {
-                                viewModel.searchActivities() // 搜索活动
-                            }
-                        
                         Button(action: {
                             viewModel.searchActivities() // 执行搜索
                         }) {
@@ -43,7 +36,19 @@ struct RecommendActivities: View {
                         }
                         .padding(.trailing, 10)
                     }
-                    .padding([.leading, .trailing], 16)
+                    .padding([.leading, .trailing], 8)
+                    
+                    // 选择搜索方式：通过兴趣标签搜索或不使用兴趣标签
+                    Picker("选择搜索方式", selection: $viewModel.useInterestFilter) {
+                        Text("💡兴趣标签推荐💡").tag(true)
+                        Text("📡全部推荐📡").tag(false)
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .padding(.horizontal, 7)
+                    .padding(.top, 7)
+                    .onChange(of: viewModel.useInterestFilter) {
+                        viewModel.fetchActivities()  // 根据选择重新加载活动
+                    }
                     
                     // 活动列表
                     ScrollView {
@@ -63,17 +68,44 @@ struct RecommendActivities: View {
                         .padding(.top, 10)
                         .padding(.leading, 5)
                         .padding(.trailing, 5)
+                        
+                        // 显示“继续加载”按钮
+                        if viewModel.hasMoreData && !viewModel.isLoadingMore {
+                            Button(action: {
+                                viewModel.loadMoreActivities()
+                            }) {
+                                Text("-------继续加载-------")
+                                    .foregroundColor(.blue)
+                                    .padding()
+                            }
+                            .padding(.bottom,150)
+                        } else if !viewModel.hasMoreData {
+                            Text("-------已加载全部活动-------")
+                                .foregroundColor(.blue)
+                                .padding()
+                        }
+                        
+                        if viewModel.isLoadingMore {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                                .padding(.top, 20)
+                        }
                     }
-                    .padding(.top, 20)
+                    .padding(.top, 5)
                     .padding(.leading, 15)
                     .padding(.trailing, 15)
+                    .background(GeometryReader { geometry in
+                        Color.clear.preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .global).maxY)
+                    })
                 }
                 .onAppear {
                     viewModel.fetchActivities() // 加载活动
                 }
-                .sheet(isPresented: $showingCreateActivityView) {
+                .sheet(isPresented: $viewModel.showingCreateActivityView) {
                     CreateActivityView()
                 }
+                
+                
                 
                 // 圆形按钮，放置在 ZStack 中
                 VStack {
@@ -81,7 +113,7 @@ struct RecommendActivities: View {
                     HStack {
                         Spacer()
                         Button(action: {
-                            showingCreateActivityView.toggle()
+                            viewModel.showingCreateActivityView.toggle()
                         }) {
                             Circle()
                                 .fill(Color.blue)
@@ -103,3 +135,11 @@ struct RecommendActivities: View {
     }
 }
 
+// 自定义偏移量的 Key
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    typealias Value = CGFloat
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}

@@ -15,7 +15,6 @@ import SwiftUI
 class HeatmapViewModel: ObservableObject {
     
     @Published var position: MapCameraPosition = .automatic
-    @Published var selectedResult: MKMapItem?
     @Published var region: MKCoordinateRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555),
         span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
@@ -24,39 +23,16 @@ class HeatmapViewModel: ObservableObject {
     @Published var regions: [HeatmapRegion] = []
     @Published var selectedRegion: HeatmapRegion? = nil // 存储当前选中的热力区域
     @Published var showDetails: Bool = false
+    @Published private var zoomScale: Double = 1.0 // 记录地图缩放比例
     
-    private var zoomScale: Double = 1.0 // 记录地图缩放比例
-    
-    // 初始化，加载示例数据
-    init() {
-        fetchActivitiesFromLeanCloud()
-    } // TODO: onAppear?
-    
-    func fetchActivitiesFromLeanCloud() {
-        let query = LCQuery(className: "Activity")
-        
-        query.find { result in
-            switch result {
-            case .success(let objects):
-                let fetchedHeatmapActivities = objects.compactMap { object -> HeatmapActivity? in
-                    guard let interestTag = object["interestTag"]?.arrayValue,
-                          let participantIds = object["participantIds"]?.arrayValue,
-                          let location = object["location"] as? LCGeoPoint
-                    else {
-                        return nil
-                    }
-                    
-                    // 创建 Activity 对象
-                    return HeatmapActivity(
-                        id: object.objectId!.stringValue ?? "",
-                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
-                        participatantCount: (participantIds as? Array<String> ?? []).count,
-                        interestTag: interestTag as? Array<String> ?? []
-                    )
-                }
-                self.activities = fetchedHeatmapActivities
+    func loadHeatmapActivities() {
+        LeanCloudService.fetchActivitiesFromLeanCloud { [weak self] activities, error in
+            guard let self = self else { return }
+            
+            if let activities = activities {
+                self.activities = activities
                 self.aggregateActivitiesIntoRegions()
-            case .failure(let error):
+            } else if let error = error {
                 print("Error fetching activities: \(error)")
             }
         }
@@ -87,5 +63,40 @@ class HeatmapViewModel: ObservableObject {
         regions = Array(regionDict.values)
     }
     
+    // 热力图颜色、透明度
+    func getHeatmapColor(for region: HeatmapRegion) -> Color {
+        let density = Double(region.activityCount) / 4.0  // 假设最大活动数为 10
+        // 计算每种颜色的分量
+        let red: Double
+        let green: Double
+        let blue: Double
+        
+        // 颜色过渡的范围
+        if density < 0.5 {
+            // 从蓝色到黄色的过渡
+            red = density * 2.0   // 增加红色分量
+            green = density * 2.0  // 增加绿色分量
+            blue = 1.0 - density * 2.0  // 减少蓝色分量
+        } else {
+            // 从黄色到红色的过渡
+            red = 1.0            // 红色固定最大
+            green = 2.0 - density * 2.0  // 减少绿色分量
+            blue = 0.0           // 蓝色为 0
+        }
+        // 透明度随着活动数增加而增大
+        let opacity = min(0.3 + density * 0.4, 5.0) // 最小透明度0.6，最大透明度1.0
+        return Color(red: red, green: green, blue: blue) // 蓝色到红色渐变
+            .opacity(opacity)
+    }
     
+    func getScaledSize(for region: HeatmapRegion) -> CGFloat {
+        let baseSize: CGFloat = 2.0 // 每个活动的基础大小
+        return CGFloat(region.activityCount) * baseSize / CGFloat(zoomScale)
+    }
+    
+    // 更新缩放比例
+    func updateZoomScale(from region: MKCoordinateRegion) {
+        let span = region.span
+        zoomScale = max(span.latitudeDelta, span.longitudeDelta)
+    }
 }

@@ -171,6 +171,11 @@ struct LeanCloudService {
     static func logout() {
         LCUser.logOut() // 退出当前用户
         UserDefaults.standard.removeObject(forKey: "username") // 移除用户名
+        UserDefaults.standard.removeObject(forKey: "avatarURL") // 移除用户名
+        UserDefaults.standard.removeObject(forKey: "email") // 移除用户名
+        UserDefaults.standard.removeObject(forKey: "interest") // 移除用户名
+        UserDefaults.standard.removeObject(forKey: "birthday") // 移除用户名
+        UserDefaults.standard.removeObject(forKey: "gender") // 移除用户名
         KeychainHelper.deletePassword() // 移除密码
     }
     
@@ -185,7 +190,7 @@ struct LeanCloudService {
         
         // 检查是否已登录（objectId 必须存在）
         guard let objectId = objectId else {
-            // TODO: 退出登录
+            logout()
             completion(false, "用户未登录")
             return
         }
@@ -219,7 +224,7 @@ struct LeanCloudService {
     // 用户兴趣更新
     static func saveChanges(objectId: String?, selectedInterests: [String], completion: @escaping (Bool, String) -> Void) {
         guard let objectId = objectId else {
-            // TODO: 退出登录
+            logout()
             completion(false, "用户未登录")
             return
         }
@@ -351,13 +356,9 @@ struct LeanCloudService {
     
     
     // 根据兴趣标签从数据库获取活动
-    static func fetchActivitiesByInterests(interests: [String], completion: @escaping ([Activity]?) -> Void) {
-        // TODO: 调整时间
+    static func fetchActivitiesByInterests(interests: [String], page: Int, pageSize: Int, completion: @escaping ([Activity]?, Int) -> Void) {
         let currentDate = Date()
-        print("--------")
-        print(currentDate)
-        print("--------")
-        // 使用 LeanCloud SDK 查询活动
+
         let query = LCQuery(className: "Activity")
         
         // 过滤兴趣标签匹配的活动
@@ -366,58 +367,77 @@ struct LeanCloudService {
         // 过滤活动时间晚于当前时间的活动
         query.whereKey("activityTime", .greaterThan(LCDate(currentDate))) // 活动时间必须在当前时间之后
         
-        query.find { result in
+        // 设置分页参数
+        query.limit = pageSize  // 每页数量
+        query.skip = (page - 1) * pageSize  // 跳过前面的数据
+        
+        // 先查询总记录数
+        let countQuery = LCQuery(className: "Activity")
+        countQuery.whereKey("interestTag", .containedIn(interests))
+        countQuery.whereKey("activityTime", .greaterThan(LCDate(currentDate)))
+        
+        countQuery.count { result in
             switch result {
-            case .success(let objects):
-                // 将查询结果转化为 Activity 对象
-                let fetchedActivities = objects.compactMap { object -> Activity? in
-                    guard let activityName = object["activityName"]?.stringValue,
-                          let interestTag = object["interestTag"]?.arrayValue,
-                          let activityTime = object["activityTime"]?.dateValue,
-                          let participantsCount = object["participantsCount"]?.intValue,
-                          let participantIds = object["participantIds"]?.arrayValue,
-                          let location = object["location"] as? LCGeoPoint
-                    else {
-                        return nil
+            case .success(let totalCount):
+                // 计算总页数
+                let totalPages = Int(ceil(Double(totalCount) / Double(pageSize)))  // 总页数
+                query.find { result in
+                    switch result {
+                    case .success(let objects):
+                        // 将查询结果转化为 Activity 对象
+                        let fetchedActivities = objects.compactMap { object -> Activity? in
+                            guard let activityName = object["activityName"]?.stringValue,
+                                  let interestTag = object["interestTag"]?.arrayValue,
+                                  let activityTime = object["activityTime"]?.dateValue,
+                                  let participantsCount = object["participantsCount"]?.intValue,
+                                  let participantIds = object["participantIds"]?.arrayValue,
+                                  let location = object["location"] as? LCGeoPoint
+                            else {
+                                return nil
+                            }
+                            
+                            // 创建 Activity 对象
+                            return Activity(
+                                id: object.objectId!.stringValue ?? "",
+                                activityName: activityName,
+                                interestTag: interestTag as? Array<String> ?? [],
+                                activityTime: activityTime,
+                                activityDescription: "",
+                                hostId: "",
+                                hostUsername: "",
+                                participantsCount: participantsCount,
+                                participantIds: participantIds as? Array<String> ?? [],
+                                location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
+                                locationName: ""
+                            )
+                        }
+                        
+                        // 更新活动列表
+                        DispatchQueue.main.async {
+                            completion(fetchedActivities, totalPages)
+                        }
+                        
+                    case .failure(let error):
+                        // 错误处理
+                        DispatchQueue.main.async {
+                            print("查询失败: \(error.localizedDescription)")
+                            completion(nil, 0)
+                        }
                     }
-                    
-                    //let imageURLString = object["image"]?.stringValue ?? ""
-                    // 如果 avatarURLString 有值，尝试转换为 URL
-                    //let image = imageURLString.isEmpty ? nil : URL(string: imageURLString)
-                    
-                    // 创建 Activity 对象
-                    return Activity(
-                        id: object.objectId!.stringValue ?? "",
-                        activityName: activityName,
-                        interestTag: interestTag as? Array<String> ?? [],
-                        activityTime: activityTime,
-                        activityDescription: "",
-                        hostId: "",
-                        hostUsername: "",
-                        participantsCount: participantsCount,
-                        participantIds: participantIds as? Array<String> ?? [],
-                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
-                        locationName: ""
-                    )
                 }
-                
-                // 更新活动列表
-                DispatchQueue.main.async {
-                    completion(fetchedActivities)
-                }
-                
             case .failure(let error):
                 // 错误处理
                 DispatchQueue.main.async {
-                    print("查询失败: \(error.localizedDescription)")
-                    completion(nil)
+                    print("查询总数失败: \(error.localizedDescription)")
+                    completion(nil, 0)
                 }
             }
         }
     }
     
+    
     // 加载所有活动数据（如果没有兴趣标签）
-    static func fetchAllActivities(completion: @escaping ([Activity]?) -> Void) {
+    static func fetchAllActivities(page: Int, pageSize: Int, completion: @escaping ([Activity]?, Int) -> Void) {
         let currentDate = Date()
         
         // 使用 LeanCloud SDK 查询所有活动
@@ -426,47 +446,68 @@ struct LeanCloudService {
         // 过滤活动时间晚于当前时间的活动
         query.whereKey("activityTime", .greaterThan(LCDate(currentDate))) // 活动时间必须在当前时间之后
         
-        query.find { result in
+        // 设置分页参数
+        query.limit = pageSize  // 每页数量
+        query.skip = (page - 1) * pageSize  // 跳过前面的数据
+        
+        // 先查询总记录数
+        let countQuery = LCQuery(className: "Activity")
+        countQuery.whereKey("activityTime", .greaterThan(LCDate(currentDate)))
+        
+        countQuery.count { result in
             switch result {
-            case .success(let objects):
-                // 将查询结果转化为 Activity 对象
-                let fetchedActivities = objects.compactMap { object -> Activity? in
-                    guard let activityName = object["activityName"]?.stringValue,
-                          let interestTag = object["interestTag"]?.arrayValue,
-                          let activityTime = object["activityTime"]?.dateValue,
-                          let participantsCount = object["participantsCount"]?.intValue,
-                          let participantIds = object["participantIds"]?.arrayValue,
-                          let location = object["location"] as? LCGeoPoint
-                    else {
-                        return nil
+            case .success(let totalCount):
+                // 计算总页数
+                let totalPages = Int(ceil(Double(totalCount) / Double(pageSize)))  // 总页数
+                query.find { result in
+                    switch result {
+                    case .success(let objects):
+                        // 将查询结果转化为 Activity 对象
+                        let fetchedActivities = objects.compactMap { object -> Activity? in
+                            guard let activityName = object["activityName"]?.stringValue,
+                                  let interestTag = object["interestTag"]?.arrayValue,
+                                  let activityTime = object["activityTime"]?.dateValue,
+                                  let participantsCount = object["participantsCount"]?.intValue,
+                                  let participantIds = object["participantIds"]?.arrayValue,
+                                  let location = object["location"] as? LCGeoPoint
+                            else {
+                                return nil
+                            }
+                            
+                            // 创建 Activity 对象
+                            return Activity(
+                                id: object.objectId!.stringValue ?? "",
+                                activityName: activityName,
+                                interestTag: interestTag as? Array<String> ?? [],
+                                activityTime: activityTime,
+                                activityDescription: "",
+                                hostId: "",
+                                hostUsername: "",
+                                participantsCount: participantsCount,
+                                participantIds: participantIds as? Array<String> ?? [],
+                                location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
+                                locationName: ""
+                            )
+                        }
+                        
+                        // 更新活动列表
+                        DispatchQueue.main.async {
+                            completion(fetchedActivities, totalPages)
+                        }
+                        
+                    case .failure(let error):
+                        // 错误处理
+                        DispatchQueue.main.async {
+                            print("查询失败: \(error.localizedDescription)")
+                            completion(nil, 0)
+                        }
                     }
-                    
-                    // 创建 Activity 对象
-                    return Activity(
-                        id: object.objectId!.stringValue ?? "",
-                        activityName: activityName,
-                        interestTag: interestTag as? Array<String> ?? [],
-                        activityTime: activityTime,
-                        activityDescription: "",
-                        hostId: "",
-                        hostUsername: "",
-                        participantsCount: participantsCount,
-                        participantIds: participantIds as? Array<String> ?? [],
-                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
-                        locationName: ""
-                    )
                 }
-                
-                // 更新活动列表
-                DispatchQueue.main.async {
-                    completion(fetchedActivities)
-                }
-                
             case .failure(let error):
                 // 错误处理
                 DispatchQueue.main.async {
-                    print("查询失败: \(error.localizedDescription)")
-                    completion(nil)
+                    print("查询总数失败: \(error.localizedDescription)")
+                    completion(nil, 0)
                 }
             }
         }
@@ -678,6 +719,39 @@ struct LeanCloudService {
             case .failure(let error):
                 print("获取用户信息失败: \(error.localizedDescription)")
                 completion("未知用户", "") // 默认返回值
+            }
+        }
+    }
+    
+    
+    // 定义静态方法来获取活动数据
+    static func fetchActivitiesFromLeanCloud(completion: @escaping ([HeatmapActivity]?, Error?) -> Void) {
+        let query = LCQuery(className: "Activity")
+        
+        query.find { result in
+            switch result {
+            case .success(let objects):
+                // 处理成功返回的数据，创建 HeatmapActivity 对象
+                let fetchedHeatmapActivities = objects.compactMap { object -> HeatmapActivity? in
+                    guard let interestTag = object["interestTag"]?.arrayValue,
+                          let participantIds = object["participantIds"]?.arrayValue,
+                          let location = object["location"] as? LCGeoPoint
+                    else {
+                        return nil
+                    }
+                    
+                    return HeatmapActivity(
+                        id: object.objectId!.stringValue ?? "",
+                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
+                        participatantCount: (participantIds as? Array<String> ?? []).count,
+                        interestTag: interestTag as? Array<String> ?? []
+                    )
+                }
+                // 调用 completion 闭包返回数据
+                completion(fetchedHeatmapActivities, nil)
+            case .failure(let error):
+                // 调用 completion 闭包返回错误
+                completion(nil, error)
             }
         }
     }

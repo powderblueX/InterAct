@@ -27,13 +27,13 @@ class MyInfoViewModel: ObservableObject {
         guard let objectId = UserDefaults.standard.string(forKey: "objectId") else {
             self.isLoading = false
             self.errorMessage = "未找到已登录的ID"
-            // TODO: 可以实现提示用户重新登录，并退到登录界面
+            LeanCloudService.logout()
             return
         }
         guard let username = UserDefaults.standard.string(forKey: "username") else {
             self.isLoading = false
             self.errorMessage = "未找到已登录的用户名"
-            // TODO: 可以实现提示用户重新登录，并退到登录界面
+            LeanCloudService.logout()
             return
         }
         

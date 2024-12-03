@@ -32,19 +32,16 @@ struct MapDetailView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             Map {
-                // TODO: 你的位置被写死了
                 MapCircle(center: activityLocation, radius: 10.0).foregroundStyle(.orange.opacity(0.3))
-                MapCircle(center: CLLocationCoordinate2D(latitude: 31.2800000, longitude: 121.2100000), radius: 10.0).foregroundStyle(.blue.opacity(0.3))
+                MapCircle(center: myCLLocation, radius: 10.0).foregroundStyle(.blue.opacity(0.3))
                 Marker("活动位置", coordinate: activityLocation).tint(.orange)
-                Marker("你的位置", coordinate: CLLocationCoordinate2D(latitude: 31.2800000, longitude: 121.2100000)).tint(.blue)
-                // 如果用户位置有效，绘制从当前位置到活动地点的路径
-                // if let myCLLocation = myCLLocation {
-                // 使用MKRoute的polyline来绘制路径
+                Marker("你的位置", coordinate: myCLLocation).tint(.blue)
+                
+                // 使用 MKRoute 的 polyline 来绘制路径
                 ForEach(directions, id: \.self) { route in
                     MapPolyline(coordinates: route.polyline.coordinates)
                         .stroke(Color.blue, lineWidth: 3)
                 }
-                // }
             }
             .mapStyle(MapStyleModel.mapStyle)
             .onAppear {

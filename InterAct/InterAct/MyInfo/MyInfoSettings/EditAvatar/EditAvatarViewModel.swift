@@ -25,7 +25,7 @@ class EditAvatarViewModel: ObservableObject {
         
         // 从 UserDefaults 获取用户名
         guard let objectId = UserDefaults.standard.string(forKey: "objectId") else {
-            // TODO: 用户登出
+            LeanCloudService.logout()
             uploadMessage = "无法获取用户ID"
             uploadSuccess = false
             return

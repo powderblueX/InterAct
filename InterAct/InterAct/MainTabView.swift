@@ -11,7 +11,7 @@ struct MainTabView: View {
     var body: some View {
         TabView {
             // 推荐活动
-            RecommendActivities()
+            RecommendActivitiesView()
                 .tabItem {
                     Image(systemName: "smiley")
                     Text("推荐活动")

@@ -68,7 +68,7 @@ class ActivityDetailViewModel: NSObject, ObservableObject, CLLocationManagerDele
     
     func getCurrentId(){
         guard let objectId = UserDefaults.standard.string(forKey: "objectId") else {
-            // TODO: 用户登出
+            LeanCloudService.logout()
             return
         }
         currentUserId = objectId

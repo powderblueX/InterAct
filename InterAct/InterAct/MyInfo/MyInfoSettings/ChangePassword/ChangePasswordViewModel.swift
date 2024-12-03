@@ -22,7 +22,7 @@ class ChangePasswordViewModel: ObservableObject {
     // 更新密码逻辑
     func updatePassword() {
         guard let objectId = UserDefaults.standard.string(forKey: "objectId") else {
-            // TODO: 用户登出
+            LeanCloudService.logout()
             self.alertType = .error("用户未登录，无法获取用户ID")
             return
         }
