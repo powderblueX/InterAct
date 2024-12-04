@@ -10,6 +10,8 @@ import CoreLocation
 import SwiftUI
 import LeanCloud
 
+// TODO: 懒加载有bug, 置顶
+
 // 推荐活动视图模型
 class RecommendedActivitiesViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var activities: [Activity] = []

@@ -18,7 +18,7 @@ struct LiveChatView: View {
                 }
 
             // 群聊
-            MyInfoView()
+            TestForNotificationView()
                 .tabItem {
                     Image(systemName: "person.3.fill")
                     Text("群聊")

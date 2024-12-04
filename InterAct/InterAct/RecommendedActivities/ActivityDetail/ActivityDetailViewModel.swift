@@ -18,9 +18,10 @@ class ActivityDetailViewModel: NSObject, ObservableObject, CLLocationManagerDele
     
     @Published var isImageSheetPresented: Bool = false
     @Published var showSaveImageAlert: Bool = false
-    @Published var showProfileBubble = false
+    @Published var showProfileBubble: Bool = false
     @Published var profileBubblePosition: CGPoint = .zero
-    @Published var showMap = false
+    @Published var showMap: Bool = false
+    @Published var showParticipateAlert: Bool = false
     
     // CLLocationManager 实例
     private var locationManager = CLLocationManager()

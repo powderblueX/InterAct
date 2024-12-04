@@ -104,9 +104,7 @@ struct RecommendActivitiesView: View {
                 .sheet(isPresented: $viewModel.showingCreateActivityView) {
                     CreateActivityView()
                 }
-                
-                
-                
+
                 // 圆形按钮，放置在 ZStack 中
                 VStack {
                     Spacer()

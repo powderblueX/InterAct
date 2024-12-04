@@ -9,6 +9,8 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
+// TODO: MVVM
+
 struct MapDetailView: View {
     var activityLocation: CLLocationCoordinate2D
     var myCLLocation: CLLocationCoordinate2D
@@ -21,7 +23,7 @@ struct MapDetailView: View {
     
     init(activityLocation: CLLocationCoordinate2D, myCLLocation: CLLocationCoordinate2D, directions: Binding<[MKRoute]>) {
         self.activityLocation = activityLocation
-        self.myCLLocation = CLLocationCoordinate2D(latitude: 31.2800000, longitude: 121.2100000)
+        self.myCLLocation = myCLLocation
         _directions = directions
         self._mapRegion = State(initialValue: MKCoordinateRegion(
             center: myCLLocation,
@@ -84,7 +86,7 @@ struct MapDetailView: View {
         case .walking:
             request.transportType = .walking
         case .cycling:
-            request.transportType = .automobile // 用汽车路径来模拟
+            request.transportType = .walking // 用步行路径来模拟
         case .automobile:
             request.transportType = .automobile
         }
@@ -120,25 +122,6 @@ class LocationManagerDelegate: NSObject, CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("定位失败: \(error.localizedDescription)")
-    }
-}
-
-// 路径显示视图
-struct MapRoute: View {
-    var directions: [MKRoute]
-    
-    var body: some View {
-        if let route = directions.first {
-            Path { path in
-                let start = route.polyline.coordinates.first!
-                path.move(to: CGPoint(x: start.latitude, y: start.longitude))
-                for coordinate in route.polyline.coordinates {
-                    path.addLine(to: CGPoint(x: coordinate.latitude, y: coordinate.longitude))
-                }
-            }
-            .stroke(Color.blue, lineWidth: 3)
-            .frame(maxHeight: .infinity)
-        }
     }
 }
 

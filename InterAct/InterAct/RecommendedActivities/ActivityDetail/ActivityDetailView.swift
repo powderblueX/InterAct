@@ -147,7 +147,7 @@ struct ActivityDetailView: View {
                                 }
                                 Button(action: {
                                     // 触发参加活动操作
-                                    
+                                    viewModel.showParticipateAlert = true
                                 }) {
                                     Text("参加活动")
                                         .font(.system(size: 20, weight: .bold))
@@ -161,10 +161,21 @@ struct ActivityDetailView: View {
                         }
                         .padding(.top, 20)
                         .frame(maxWidth: .infinity, alignment: .center)
+                        .alert(isPresented: $viewModel.showParticipateAlert) {
+                            Alert(
+                                title: Text("提示"),
+                                message: Text("您确定要参加该活动吗"),
+                                primaryButton: .destructive(Text("确定")){
+                                    print("请耐心等待活动发起人通过")
+                                },
+                                secondaryButton: .cancel(Text("取消"))
+                            )
+                        }
                     }
                 }
                 .padding()
             }
+            
             // 气泡视图，显示发起人信息
             if viewModel.showProfileBubble {
                 Color.black.opacity(0.4)
