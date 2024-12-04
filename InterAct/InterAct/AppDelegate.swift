@@ -7,6 +7,7 @@
 
 import UIKit
 import LeanCloud
+import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     // 当应用启动完成时会调用
@@ -63,45 +64,73 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     // 将 deviceToken 存储到 LeanCloud _Installation 表，并与 userId 关联
     func saveDeviceTokenToInstallation(deviceToken: String, userId: String) {
         let installation = LCInstallation()
-        installation.set(deviceToken: "deviceToken", apnsTeamId: deviceToken)  // 设置 deviceToken
-        installation.set(deviceToken: "userId", apnsTeamId: userId)  // 将 userId 设置为设备的关联标识
-        
-        installation.save { result in
-            switch result {
-            case .success:
-                print("Device token 保存成功.")
-            case .failure(let error):
-                print("保存 device token 失败：\(error)")
+        do {
+            // 设置 deviceToken 和 userId
+            try installation.set("userId", value: userId)
+            installation.set(deviceToken: deviceToken, apnsTeamId: "xyy20040123")
+            
+            // 保存到 LeanCloud
+            installation.save { result in
+                switch result {
+                case .success:
+                    print("Device token 保存成功.")
+                case .failure(let error):
+                    print("保存 device token 失败：\(error)")
+                }
             }
+        } catch {
+            print("保存 device token 失败：\(error.localizedDescription)")
         }
     }
     
-    // 处理收到的远程推送通知
-    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        // 解析推送通知
-        if let aps = userInfo["aps"] as? [String: AnyObject], let alert = aps["alert"] as? String {
-            print("Received push notification: \(alert)")
-            
-            // 在界面上显示推送通知消息
-            DispatchQueue.main.async {
-                // 假设你有一个界面组件来显示消息
-                // 例如弹出一个对话框或更新界面
-                self.showAlert(message: alert)
-            }
-        }
+//    // 处理收到的远程推送通知
+//    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+//        // 解析推送通知
+//        if let aps = userInfo["aps"] as? [String: AnyObject], let alert = aps["alert"] as? String {
+//            print("Received push notification: \(alert)")
+//            
+//            // 在界面上显示推送通知消息
+//            DispatchQueue.main.async {
+//                // 假设你有一个界面组件来显示消息
+//                // 例如弹出一个对话框或更新界面
+//                self.showAlert(message: alert)
+//            }
+//        }
+//        
+//        completionHandler(.newData)
+//    }
+//        
+//        // 显示消息的简单实现
+//    func showAlert(message: String) {
+//        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+//            if let rootVC = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController {
+//                let alert = UIAlertController(title: "Push Notification", message: message, preferredStyle: .alert)
+//                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+//                rootVC.present(alert, animated: true, completion: nil)
+//            }
+//        }
+//    }
+    
+    // 处理推送通知的回调
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        // 获取推送通知的内容
+        let message = response.notification.request.content.body
+        print("收到推送通知: \(message)")
         
-        completionHandler(.newData)
-    }
+        // 存储消息到本地
+        saveMessageToLocalStorage(message: message)
         
-        // 显示消息的简单实现
-    func showAlert(message: String) {
-        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            if let rootVC = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController {
-                let alert = UIAlertController(title: "Push Notification", message: message, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                rootVC.present(alert, animated: true, completion: nil)
-            }
-        }
+        completionHandler()
     }
+
+    // 存储消息到本地
+    func saveMessageToLocalStorage(message: String) {
+        // 你可以使用 CoreData、Realm、UserDefaults 或其他存储方式来保存消息
+        let messages = UserDefaults.standard.array(forKey: "messages") as? [String] ?? []
+        var updatedMessages = messages
+        updatedMessages.append(message)
+        UserDefaults.standard.set(updatedMessages, forKey: "messages")
+    }
+
 }
 

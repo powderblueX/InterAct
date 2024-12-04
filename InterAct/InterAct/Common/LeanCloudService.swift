@@ -31,9 +31,22 @@ struct LeanCloudService {
                     completion(.failure(NSError(domain: "KeychainError", code: 0, userInfo: [NSLocalizedDescriptionKey: "无法保存密码"])))
                     return
                 }
+                registerForPushNotifications()
                 completion(.success(())) // 登录成功，返回 .success
             case .failure(let error):
                 completion(.failure(error)) // 登录失败，返回 .failure 并传递错误
+            }
+        }
+    }
+    
+    
+    // 注册推送通知
+    static func registerForPushNotifications() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            if granted {
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
             }
         }
     }
