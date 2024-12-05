@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct MessageRowView: View {
-    let message: Message
+    @StateObject private var viewModel = MessageRowViewModel()
+    @State var message: Message
     let isCurrentUser: Bool
     let chat: PrivateChat
 
@@ -16,23 +17,70 @@ struct MessageRowView: View {
         HStack {
             if isCurrentUser {
                 userMessageView
+                    .padding(.bottom, 10)
             } else {
                 partnerMessageView
+                    .padding(.bottom, 10)
             }
         }
         .padding(isCurrentUser ? .leading : .trailing, 10)
         .padding(isCurrentUser ? .trailing : .leading, 40)
         .padding(.vertical, 4)
+        .onAppear {
+            message.content = viewModel.updateContent(content: message.content)
+        }
     }
 
     private var userMessageView: some View {
-        HStack {
+        HStack(alignment: .top) {
             // 显示对方头像
             avatarImage(url: chat.partnerAvatarURL)
             
             VStack(alignment: .leading) {
                 messageContent
                 messageTimestamp
+                if isCurrentUser && (viewModel.activityId != nil) {
+                    if let activityId = viewModel.activityId {
+                        HStack(spacing:1){
+                            NavigationLink(destination: ActivityDetailView(activityId: activityId)){
+                                Text("查看活动")
+                                    .padding(3)
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
+                                    .font(.subheadline)  // 调整字体大小
+                                    .frame(width: 100, height: 10)  // 限制宽度和高度
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: {
+
+                            }) {
+                                Text("同意")
+                                    .padding(3)
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
+                                    .font(.subheadline)  // 调整字体大小
+                                    .frame(width: 50, height: 10)  // 限制宽度和高度
+                            }
+                            
+                            Button(action: {
+
+                            }) {
+                                Text("拒绝")
+                                    .padding(3)
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
+                                    .font(.subheadline)  // 调整字体大小
+                                    .frame(width: 50, height: 10)  // 限制宽度和高度
+                            }
+                        }
+                        .padding(.top,3)
+                        .padding(.bottom, 3)
+                    }
+                }
             }
 
             Spacer()
@@ -40,7 +88,7 @@ struct MessageRowView: View {
     }
 
     private var partnerMessageView: some View {
-        HStack {
+        HStack(alignment: .top) {
             Spacer()
 
             VStack(alignment: .trailing) {
@@ -53,14 +101,16 @@ struct MessageRowView: View {
     }
 
     private var messageContent: some View {
-        Text(message.content)
-            .padding(5)
-            .background(isCurrentUser ? Color.gray.opacity(0.2) : Color.blue)
-            .foregroundColor(isCurrentUser ? .black : .white)
-            .cornerRadius(8)
-            .lineLimit(nil)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: isCurrentUser ? .leading : .trailing)
+        return VStack{
+            Text(message.content)
+                .padding(5)
+                .background(isCurrentUser ? Color.gray.opacity(0.2) : Color.blue)
+                .foregroundColor(isCurrentUser ? .black : .white)
+                .cornerRadius(8)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: isCurrentUser ? .leading : .trailing)
+        }
     }
 
     private var messageTimestamp: some View {
@@ -82,12 +132,15 @@ struct MessageRowView: View {
         .frame(width: 40, height: 40)
         .clipShape(Circle())
     }
+    
+   
 }
 
 
 
 
 //struct MessageRowView: View {
+//    @StateObject private var viewModel = MessageRowViewModel()
 //    let message: Message
 //    let isCurrentUser: Bool
 //    let chat: PrivateChat
@@ -108,7 +161,7 @@ struct MessageRowView: View {
 //                .clipShape(Circle())
 //
 //                VStack(alignment: .leading) {
-//                    Text(message.content)
+//                    Text(viewModel.updateContent(content: message.content))
 //                        .padding()
 //                        .background(Color.gray.opacity(0.2))
 //                        .cornerRadius(8)
@@ -126,7 +179,7 @@ struct MessageRowView: View {
 //            } else {
 //                Spacer()
 //                VStack(alignment: .trailing) {
-//                    Text(message.content)
+//                    Text(viewModel.updateContent(content: message.content))
 //                        .padding()
 //                        .background(Color.blue)
 //                        .foregroundColor(.white)

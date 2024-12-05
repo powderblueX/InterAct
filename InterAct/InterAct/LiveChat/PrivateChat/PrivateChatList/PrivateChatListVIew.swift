@@ -45,7 +45,7 @@ struct PrivateChatListView: View {
                         
                         Spacer()
                         
-                        NavigationLink(destination: PrivateChatView(viewModel: PrivateChatViewModel(currentUserId: viewModel.currentUserId, recipientUserId: chat.partnerId))) {
+                        NavigationLink(destination: PrivateChatView(currentUserId: viewModel.currentUserId, recipientUserId: chat.partnerId)) {
                         }
                     }
                 }

@@ -20,7 +20,7 @@ class PrivateChatViewModel: ObservableObject {
     let recipientUserId: String
     
     var sendParticipateIn: SendParticipateIn? = nil
-    
+
     // LeanCloud 客户端
     private var client: IMClient?
     private var conversation: IMConversation?
@@ -33,7 +33,7 @@ class PrivateChatViewModel: ObservableObject {
     // 当前消息列表
     @Published var messages: [Message] = [] {
         didSet {
-            onMessagesUpdated?(messages)
+            self.onMessagesUpdated?(messages)
         }
     }
     
@@ -60,12 +60,14 @@ class PrivateChatViewModel: ObservableObject {
     
     // 打开聊天会话
     func openChatSession() {
-        do {
-            client = try IMClient(ID: currentUserId)
-            print("IMClient initialized successfully with ID: \(currentUserId)")  // 调试日志
-        } catch {
-            print("Failed to initalize IMClient: \(error.localizedDescription)")
-            return
+        if client == nil {
+            do {
+                client = try IMClient(ID: currentUserId)
+                print("IMClient initialized successfully with ID: \(currentUserId)")  // 调试日志
+            } catch {
+                print("Failed to initalize IMClient: \(error.localizedDescription)")
+                return
+            }
         }
         
         self.setupMessageReceiving()
@@ -90,13 +92,7 @@ class PrivateChatViewModel: ObservableObject {
                     self?.conversation = conversation
                     print("Conversation created: \(conversation)")
                     self?.loadMessageHistory()
-                    if let sendParticipateIn = self?.sendParticipateIn {
-                        // 假设你在发送消息时，将封装后的Activity JSON字符串作为消息的内容
-                        if let activityJSONString = self?.encodeActivityToJSONString(sendParticipateIn: sendParticipateIn) {
-                            let messageContent = activityJSONString
-                            self?.sendMessage("# wannaParticipateIn: " + messageContent)  // 调用发送消息的函数
-                        }
-                    }
+                    
                 case .failure(let error):
                     self?.onError = error
                 }
@@ -114,20 +110,19 @@ class PrivateChatViewModel: ObservableObject {
     
     // 加载历史消息
     private func loadMessageHistory() {
+        if let sendParticipateIn = self.sendParticipateIn {
+            // 假设你在发送消息时，将封装后的Activity JSON字符串作为消息的内容
+            if let activityJSONString = self.encodeActivityToJSONString(sendParticipateIn: sendParticipateIn) {
+                let messageContent = activityJSONString
+                self.sendMessage("# wannaParticipateIn: " + messageContent)  // 调用发送消息的函数
+            }
+        }
         do {
             try conversation?.queryMessage{ [weak self] result in
                 switch result {
                 case .success(let messages):
                     self?.messages = messages.compactMap { message in
                         if let textMessage = message as? IMTextMessage {
-                            if let textMessageContent = textMessage.text {
-                                if textMessageContent.starts(with: "# wannaParticipateIn: ") {
-                                    let activityJSONString = String(textMessageContent.dropFirst("# wannaParticipateIn: ".count)) // 去掉前缀
-                                    if let activity = self?.decodeJSONStringToActivity(jsonString: activityJSONString) {
-                                        textMessage.text = "我想参加您发起的活动：“"+activity.activityName+"”"
-                                    }
-                                }
-                            }
                             return Message(
                                 id: message.ID ?? UUID().uuidString,
                                 senderId: textMessage.fromClientID ?? "unknown",
@@ -155,25 +150,21 @@ class PrivateChatViewModel: ObservableObject {
             try conversation.send(message: message) { [weak self] result in
                 switch result {
                 case .success:
-                    var newMessage = Message(
-                        id: message.ID ?? UUID().uuidString,
-                        senderId: self?.currentUserId ?? "unknown",
-                        content: text,
-                        timestamp: message.sentDate ?? Date()
-                    )
+                    var text_temp = text
                     if text.starts(with: "# wannaParticipateIn: ") {
                         let activityJSONString = String(text.dropFirst("# wannaParticipateIn: ".count)) // 去掉前缀
                         if let activity = self?.decodeJSONStringToActivity(jsonString: activityJSONString) {
-                            newMessage.content = "我想参加您发起的活动：”"+activity.activityName+"“"
-                            DispatchQueue.main.async {
-                                self?.messages.append(newMessage)
-                            }
+                            text_temp = "我想参加您发起的活动：”"+activity.activityName+"“"
                         }
-                    } else {
-                        // 将新消息添加到 messages 数组中
-                        DispatchQueue.main.async {
-                            self?.messages.append(newMessage)
-                        }
+                    }
+                    let newMessage = Message(
+                        id: message.ID ?? UUID().uuidString,
+                        senderId: self?.currentUserId ?? "unknown",
+                        content: text_temp,
+                        timestamp: message.sentDate ?? Date()
+                    )
+                    DispatchQueue.main.async {
+                        self?.messages.append(newMessage)
                     }
                 case .failure(let error):
                     print("Failed to send message: \(error.localizedDescription)")
@@ -197,6 +188,24 @@ class PrivateChatViewModel: ObservableObject {
 
         // TODO: 这里省略了上传图片的具体实现，假设我们可以生成一个图片消息
 
+    }
+    
+    // 关闭 LeanCloud 客户端连接
+    func closeConnection() {
+        if let client = self.client {
+            print("Attempting to close connection...")
+            client.close { result in
+                switch result {
+                case .success:
+                    print("IMClient connection closed successfully.")
+                case .failure(let error):
+                    print("Failed to close IMClient connection: \(error.localizedDescription)")
+                }
+            }
+        } else {
+            print("IMClient is nil, cannot close connection.")
+        }
+        self.client = nil
     }
     
     // 编码Activity为JSON字符串

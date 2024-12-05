@@ -8,12 +8,12 @@
 import SwiftUI
 
 struct PrivateChatView: View {
-    @ObservedObject private var viewModel: PrivateChatViewModel
+    @StateObject private var viewModel: PrivateChatViewModel
     @State private var messageText: String = ""
     @State private var selectedImage: UIImage?
     
-    init(viewModel: PrivateChatViewModel) {
-        self.viewModel = viewModel
+    init(currentUserId: String, recipientUserId: String, sendParticipateIn: SendParticipateIn? = nil) {
+        _viewModel = StateObject(wrappedValue: PrivateChatViewModel(currentUserId: currentUserId, recipientUserId: recipientUserId, sendParticipateIn: sendParticipateIn ))
     }
     
     var body: some View {
@@ -80,6 +80,9 @@ struct PrivateChatView: View {
         .onAppear {
             viewModel.fetchUserInfo(for: viewModel.recipientUserId)
             viewModel.openChatSession()
+        }
+        .onDisappear {
+            viewModel.closeConnection()
         }
         .alert(isPresented: Binding<Bool>(
             get: { viewModel.onError != nil },
