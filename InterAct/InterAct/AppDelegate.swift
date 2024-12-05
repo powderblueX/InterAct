@@ -25,5 +25,40 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         return true
     }
+    
+    // 处理应用的深链接
+    func application(_ application: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        print("Received URL: \(url)")
+        // 确保深链接的 scheme 和 host 正确
+        if url.scheme == "XInterActApp" && url.host == "activity" {
+            if let activityID = url.queryParameters?["id"] {
+                // 更新全局状态，存储活动ID
+                AppState.shared.activityIDToShow = activityID
+                print("深链接解析，活动ID: \(activityID)")
+            } else {
+                print("没有找到活动ID")
+            }
+        } else {
+            print("深链接不匹配 scheme 或 host")
+        }
+        return true
+    }
 }
 
+extension URL {
+    var queryParameters: [String: String]? {
+        guard let components = URLComponents(url: self, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems else { return nil }
+        var params = [String: String]()
+        for item in queryItems {
+            params[item.name] = item.value
+        }
+        return params
+    }
+}
+
+// TODO: 
+//// 扩展 Notification.Name，用来定义深链接通知
+//extension Notification.Name {
+//    static let activityDeepLink = Notification.Name("activityDeepLink")
+//}

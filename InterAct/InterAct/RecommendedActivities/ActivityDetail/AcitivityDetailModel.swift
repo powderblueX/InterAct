@@ -14,3 +14,8 @@ struct HostInfo {
     var gender: String      // 用户性别
     var exp: Int            // 用户声望
 }
+
+struct SendParticipateIn: Codable {
+    let activityId: String
+    let activityName: String
+}

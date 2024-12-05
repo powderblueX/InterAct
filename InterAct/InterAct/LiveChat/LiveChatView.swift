@@ -18,7 +18,7 @@ struct LiveChatView: View {
                 }
 
             // 群聊
-            MyInfoView()
+            TestView(activityID: "6749b5a8db65795a774c7867")
                 .tabItem {
                     Image(systemName: "person.3.fill")
                     Text("群聊")

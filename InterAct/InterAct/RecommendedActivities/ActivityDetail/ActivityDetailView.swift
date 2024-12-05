@@ -145,17 +145,17 @@ struct ActivityDetailView: View {
                                     }
                                     .disabled(viewModel.currentUserId.isEmpty || ((viewModel.activity?.hostId) == nil))
                                 }
-                                Button(action: {
-                                    // 触发参加活动操作
-                                    viewModel.showParticipateAlert = true
-                                }) {
-                                    Text("参加活动")
-                                        .font(.system(size: 20, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .padding()
-                                        .frame(maxWidth: 150)
-                                        .background(Color.blue)
-                                        .cornerRadius(10)
+                                VStack{
+                                    NavigationLink(destination: PrivateChatView(viewModel: PrivateChatViewModel(currentUserId: viewModel.currentUserId, recipientUserId: viewModel.activity?.hostId ?? "", sendParticipateIn: SendParticipateIn(activityId: activityId, activityName: viewModel.activity?.activityName ?? "加载中...")))) {
+                                        Text("我要参加")
+                                            .font(.system(size: 20, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .padding()
+                                            .frame(maxWidth: 150)
+                                            .background(.blue)
+                                            .cornerRadius(10)
+                                    }
+                                    .disabled(viewModel.currentUserId.isEmpty || ((viewModel.activity?.hostId) == nil))
                                 }
                             }
                         }

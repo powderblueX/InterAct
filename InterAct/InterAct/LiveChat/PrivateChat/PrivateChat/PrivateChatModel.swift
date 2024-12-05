@@ -8,15 +8,13 @@
 import Foundation
 import LeanCloud
 
-struct Message: Identifiable {
+struct Message: Identifiable, Hashable, Equatable {
     var id: String
     var senderId: String
     // var toId: String
     var content: String
     var timestamp: Date
 }
-
-
 
 
 struct User: Identifiable{

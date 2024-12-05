@@ -20,7 +20,8 @@ struct MessageRowView: View {
                 partnerMessageView
             }
         }
-        .padding(isCurrentUser ? .leading : .trailing, 50)
+        .padding(isCurrentUser ? .leading : .trailing, 10)
+        .padding(isCurrentUser ? .trailing : .leading, 40)
         .padding(.vertical, 4)
     }
 

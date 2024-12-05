@@ -17,16 +17,34 @@ struct PrivateChatView: View {
     }
     
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             Text(viewModel.chat?.partnerUsername ?? "加载中...")
                 .font(.title)
                 .fontWeight(.bold)
                 .padding()
             
             // 消息列表
-            ScrollView {
-                ForEach(viewModel.messages) { message in
-                    MessageRowView(message: message, isCurrentUser: message.senderId != viewModel.currentUserId, chat: viewModel.chat ?? PrivateChat(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: ""))
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(viewModel.messages) { message in
+                            MessageRowView(message: message, isCurrentUser: message.senderId != viewModel.currentUserId, chat: viewModel.chat ?? PrivateChat(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: ""))
+                                .id(message.id)  // 给每条消息设置唯一的 id
+                        }
+                    }
+                }
+                .onAppear {
+                    DispatchQueue.main.async {
+                        if let lastMessage = viewModel.messages.last {
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
+                    }
+                }
+                .onChange(of: viewModel.messages) {
+                    // 当消息更新时滚动到底部
+                    if let lastMessage = viewModel.messages.last {
+                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                    }
                 }
             }
             

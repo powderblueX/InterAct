@@ -30,7 +30,7 @@ class RecommendedActivitiesViewModel: NSObject, ObservableObject, CLLocationMana
     @Published var hasMoreData: Bool = true // 是否还有更多数据
     @Published var isForMore: Bool = false
 
-    private let pageSize = 2 // 每页加载8条活动
+    private let pageSize = 10 // 每页加载8条活动
     
     private var locationManager = CLLocationManager() // CLLocationManager 实例
     
