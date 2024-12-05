@@ -57,12 +57,18 @@ class PrivateChatViewModel: ObservableObject {
     func openChatSession() {
         do {
             client = try IMClient(ID: currentUserId)
+            print("IMClient initialized successfully with ID: \(currentUserId)")  // 调试日志
         } catch {
             print("Failed to initalize IMClient: \(error.localizedDescription)")
+            return
         }
+        
+        self.setupMessageReceiving()
+        
         client?.open { [weak self] result in
             switch result {
             case .success:
+                print("IMClient opened successfully.")
                 self?.fetchOrCreateConversation()
             case .failure(let error):
                 self?.onError = error
@@ -77,7 +83,7 @@ class PrivateChatViewModel: ObservableObject {
                 switch result {
                 case .success(let conversation):
                     self?.conversation = conversation
-                    self?.setupMessageReceiving()
+                    print("Conversation created: \(conversation)")
                     self?.loadMessageHistory()
                 case .failure(let error):
                     self?.onError = error
@@ -90,6 +96,7 @@ class PrivateChatViewModel: ObservableObject {
     
     // 监听消息接收
     private func setupMessageReceiving() {
+        print("Setting up delegate for message receiving.")  // 调试日志
         client?.delegate = self
     }
     
@@ -134,8 +141,11 @@ class PrivateChatViewModel: ObservableObject {
                         content: text,
                         timestamp: message.sentDate ?? Date()
                     )
-                    self?.messages.append(newMessage)
+                    DispatchQueue.main.async {
+                        self?.messages.append(newMessage)
+                    }
                 case .failure(let error):
+                    print("Failed to send message: \(error.localizedDescription)")
                     self?.onError = error
                 }
             }
@@ -153,52 +163,43 @@ class PrivateChatViewModel: ObservableObject {
     func sendImage(_ image: UIImage) {
         guard conversation != nil else { return }
         
-        // 将图片转换为 LeanCloud 支持的格式（比如：保存到 LeanCloud 或发送为图片消息）
+
         // TODO: 这里省略了上传图片的具体实现，假设我们可以生成一个图片消息
-//        let imageMessage = IMImageMessage(image: image)
-//        
-//        do {
-//            try conversation.send(message: imageMessage) { [weak self] result in
-//                switch result {
-//                case .success:
-//                    let newMessage = Message(
-//                        id: imageMessage.ID ?? UUID().uuidString,
-//                        senderId: self?.currentUserId ?? "unknown",
-//                        content: "图片消息",
-//                        timestamp: imageMessage.sentDate ?? Date()
-//                    )
-//                    self?.messages.append(newMessage)
-//                case .failure(let error):
-//                    self?.onError?(error)
-//                }
-//            }
-//        } catch {
-//            print(error.localizedDescription)
-//        }
+
     }
 }
 
+
 extension PrivateChatViewModel: IMClientDelegate {
-    func client(_ client: IMClient, conversation: IMConversation, event: IMConversationEvent) {
-        // 处理对话事件
+    func client(_ client: LeanCloud.IMClient, conversation: LeanCloud.IMConversation, event: LeanCloud.IMConversationEvent) {
+        switch event {
+        case .message(let messageEvent):
+            switch messageEvent {
+            case .received(let message):
+                print("Conversation received message: \(String(describing: message.content))")
+            default:
+                break
+            }
+        default:
+            break
+        }
     }
     
     func client(_ client: IMClient, event: IMClientEvent) {
-        // 处理客户端事件
-    }
-    
-    // 收到新消息
-    func client(_ client: IMClient, conversation: IMConversation, didReceive message: IMMessage) {
-        if let textMessage = message as? IMTextMessage {
-            let newMessage = Message(
-                id: message.ID ?? UUID().uuidString,
-                senderId: textMessage.fromClientID ?? "unknown",
-                content: textMessage.text ?? "",
-                timestamp: textMessage.sentDate ?? Date()
-            )
-            self.messages.append(newMessage)
+        print("Received event: \(event)") // 打印事件类型
+        switch event {
+        case .sessionDidClose(let error):
+            print("Session closed with error: \(error.localizedDescription)")
+        case .sessionDidOpen:
+            print("Session opened successfully.")
+        case .sessionDidPause(let error):
+            print("Session paused with error: \(error.localizedDescription)")
+        case .sessionDidResume:
+            print("Session resumed successfully.")
         }
     }
+
+    
 }
 
 

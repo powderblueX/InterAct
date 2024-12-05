@@ -12,6 +12,7 @@
 		841E33732CF5FF570020AB0C /* ImagePicker in Frameworks */ = {isa = PBXBuildFile; productRef = 841E33722CF5FF570020AB0C /* ImagePicker */; };
 		841E337D2CF60B1B0020AB0C /* CropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = 841E337C2CF60B1B0020AB0C /* CropViewController */; };
 		841E337F2CF60B1B0020AB0C /* TOCropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = 841E337E2CF60B1B0020AB0C /* TOCropViewController */; };
+		84E89B242D00C5AF0092E5B8 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 84E89B232D00C5AF0092E5B8 /* Starscream */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,6 +79,7 @@
 				841E337D2CF60B1B0020AB0C /* CropViewController in Frameworks */,
 				841E33732CF5FF570020AB0C /* ImagePicker in Frameworks */,
 				841E331E2CF5FECE0020AB0C /* LeanCloud in Frameworks */,
+				84E89B242D00C5AF0092E5B8 /* Starscream in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -143,6 +145,7 @@
 				841E33722CF5FF570020AB0C /* ImagePicker */,
 				841E337C2CF60B1B0020AB0C /* CropViewController */,
 				841E337E2CF60B1B0020AB0C /* TOCropViewController */,
+				84E89B232D00C5AF0092E5B8 /* Starscream */,
 			);
 			productName = InterAct;
 			productReference = 841E325D2CF5FC9D0020AB0C /* InterAct.app */;
@@ -231,6 +234,7 @@
 				841E336E2CF5FF440020AB0C /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				841E33712CF5FF570020AB0C /* XCRemoteSwiftPackageReference "ImagePicker" */,
 				841E337B2CF60B1B0020AB0C /* XCRemoteSwiftPackageReference "TOCropViewController" */,
+				84E89B222D00C5AF0092E5B8 /* XCRemoteSwiftPackageReference "Starscream" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 841E325E2CF5FC9D0020AB0C /* Products */;
@@ -627,6 +631,14 @@
 				minimumVersion = 2.7.4;
 			};
 		};
+		84E89B222D00C5AF0092E5B8 /* XCRemoteSwiftPackageReference "Starscream" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/daltoniam/Starscream";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.8;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -654,6 +666,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 841E337B2CF60B1B0020AB0C /* XCRemoteSwiftPackageReference "TOCropViewController" */;
 			productName = TOCropViewController;
+		};
+		84E89B232D00C5AF0092E5B8 /* Starscream */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 84E89B222D00C5AF0092E5B8 /* XCRemoteSwiftPackageReference "Starscream" */;
+			productName = Starscream;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
