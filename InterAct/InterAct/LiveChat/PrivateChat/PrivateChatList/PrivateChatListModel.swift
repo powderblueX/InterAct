@@ -8,8 +8,10 @@
 import Foundation
 
 // 私聊会话模型
-struct PrivateChat {
+struct PrivateChatList {
     let partnerId: String
     let partnerUsername: String
     let partnerAvatarURL: String
 }
+
+

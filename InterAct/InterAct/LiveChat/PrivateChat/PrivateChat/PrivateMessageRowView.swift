@@ -7,11 +7,11 @@
 
 import SwiftUI
 
-struct MessageRowView: View {
-    @StateObject private var viewModel = MessageRowViewModel()
+struct PrivateMessageRowView: View {
+    @StateObject private var viewModel = PrivateMessageRowViewModel()
     @State var message: Message
     let isCurrentUser: Bool
-    let chat: PrivateChat
+    let chat: PrivateChatList
 
     var body: some View {
         HStack {
@@ -23,23 +23,22 @@ struct MessageRowView: View {
                     .padding(.bottom, 10)
             }
         }
-        .padding(isCurrentUser ? .leading : .trailing, 10)
-        .padding(isCurrentUser ? .trailing : .leading, 40)
+        .padding(isCurrentUser ? .leading : .trailing, 40)
+        .padding(isCurrentUser ? .trailing : .leading, 10)
         .padding(.vertical, 4)
         .onAppear {
             message.content = viewModel.updateContent(content: message.content)
         }
     }
 
-    private var userMessageView: some View {
+    private var partnerMessageView: some View {
         HStack(alignment: .top) {
-            // 显示对方头像
             avatarImage(url: chat.partnerAvatarURL)
             
             VStack(alignment: .leading) {
                 messageContent
                 messageTimestamp
-                if isCurrentUser && (viewModel.activityId != nil) {
+                if !isCurrentUser && (viewModel.activityId != nil) {
                     if let activityId = viewModel.activityId {
                         HStack(spacing:1){
                             NavigationLink(destination: ActivityDetailView(activityId: activityId)){
@@ -87,7 +86,7 @@ struct MessageRowView: View {
         }
     }
 
-    private var partnerMessageView: some View {
+    private var userMessageView: some View {
         HStack(alignment: .top) {
             Spacer()
 
@@ -104,12 +103,12 @@ struct MessageRowView: View {
         return VStack{
             Text(message.content)
                 .padding(5)
-                .background(isCurrentUser ? Color.gray.opacity(0.2) : Color.blue)
-                .foregroundColor(isCurrentUser ? .black : .white)
+                .background(isCurrentUser ? Color.blue : Color.gray.opacity(0.2))
+                .foregroundColor(isCurrentUser ? .white : .black)
                 .cornerRadius(8)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: isCurrentUser ? .leading : .trailing)
+                .frame(maxWidth: .infinity, alignment: isCurrentUser ? .trailing : .leading)
         }
     }
 

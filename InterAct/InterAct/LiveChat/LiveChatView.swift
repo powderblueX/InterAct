@@ -18,7 +18,7 @@ struct LiveChatView: View {
                 }
 
             // 群聊
-            TestView(activityID: "6749b5a8db65795a774c7867")
+            GroupChatListView()
                 .tabItem {
                     Image(systemName: "person.3.fill")
                     Text("群聊")
@@ -28,6 +28,10 @@ struct LiveChatView: View {
     }
 }
 
-//#Preview {
-//    LiveChatView()
-//}
+extension DateFormatter {
+    static var shortTimeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }
+}

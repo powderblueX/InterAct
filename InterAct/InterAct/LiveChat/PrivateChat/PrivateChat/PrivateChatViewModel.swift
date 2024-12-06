@@ -13,7 +13,7 @@ import UIKit
 // TODO: 实现退出页面后断开连接
 
 class PrivateChatViewModel: ObservableObject {
-    @Published var chat: PrivateChat? = PrivateChat(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "")
+    @Published var chat: PrivateChatList? = PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "")
     
     // 当前用户
     let currentUserId: String
@@ -25,7 +25,6 @@ class PrivateChatViewModel: ObservableObject {
     private var client: IMClient?
     private var conversation: IMConversation?
 
-    
     // 数据绑定：通过这些闭包通知 View 层更新
     var onMessagesUpdated: (([Message]) -> Void)?
     @Published var onError: Error?
@@ -49,7 +48,7 @@ class PrivateChatViewModel: ObservableObject {
         LeanCloudService.fetchUserInfo(for: userId) { [weak self] username, avatarURL in
             // 更新 PrivateChat 实例
             if let chat = self?.chat {
-                self?.chat = PrivateChat(
+                self?.chat = PrivateChatList(
                     partnerId: chat.partnerId,
                     partnerUsername: username,
                     partnerAvatarURL: avatarURL
@@ -86,7 +85,7 @@ class PrivateChatViewModel: ObservableObject {
     // 查找或创建一个私信对话
     private func fetchOrCreateConversation() {
         do {
-            try client?.createConversation(clientIDs: [recipientUserId], isUnique: true) { [weak self] result in
+            try client?.createConversation(clientIDs: [recipientUserId], attributes: ["isPrivate": true] ,isUnique: true) { [weak self] result in
                 switch result {
                 case .success(let conversation):
                     self?.conversation = conversation
@@ -288,9 +287,7 @@ extension PrivateChatViewModel: IMClientDelegate {
         case .sessionDidResume:
             print("Session resumed successfully.")
         }
-    }
-
-    
+    }  
 }
 
 

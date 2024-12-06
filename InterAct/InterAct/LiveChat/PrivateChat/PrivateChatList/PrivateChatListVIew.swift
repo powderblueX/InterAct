@@ -13,8 +13,8 @@ struct PrivateChatListView: View {
     
     var body: some View {
         NavigationView {
-            List(viewModel.privateChats, id: \.partnerId) { chat in
-                VStack{
+            VStack{
+                List(viewModel.privateChats, id: \.partnerId) { chat in
                     HStack {
                         // 显示对方头像
                         if let avatarURL = URL(string: chat.partnerAvatarURL), !chat.partnerAvatarURL.isEmpty {
@@ -51,7 +51,6 @@ struct PrivateChatListView: View {
                 }
             }
             .navigationTitle("私信列表")
-            
             .onAppear {
                 viewModel.fetchPrivateChats()  // 获取私聊列表
             }
@@ -66,14 +65,5 @@ struct PrivateChatListView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: date)
-    }
-}
-
-
-extension DateFormatter {
-    static var shortTimeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter
     }
 }

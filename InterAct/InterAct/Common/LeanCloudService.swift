@@ -577,7 +577,7 @@ struct LeanCloudService {
     }
     
     
-    // 获取私信对方的信息（头像和用户名）
+    // 获取发起人信息
     static func fetchHostInfo(for userId: String, completion: @escaping (String, String, String, Int) -> Void) {
         let query = LCQuery(className: "_User")
         query.whereKey("objectId", .equalTo(userId))
@@ -596,7 +596,7 @@ struct LeanCloudService {
         }
     }
     
-    
+    // TODO: 创建群聊
     // 创建活动
     static func createActivity(activityName: String, selectedTags: [String], activityTime: Date, activityDescription: String, hostId: String?, location: CLLocationCoordinate2D?, locationName: String, selectedImage: UIImage?, participantsCount: Int, completion: @escaping (Bool, String) -> Void) {
         guard let hostId = hostId else {
@@ -674,19 +674,22 @@ struct LeanCloudService {
     
     
     // 获取私信列表
-    static func fetchPrivateChats(for currentUserId: String, completion: @escaping (Result<[PrivateChat], Error>) -> Void) {
+    static func fetchPrivateChats(for currentUserId: String, completion: @escaping (Result<[PrivateChatList], Error>) -> Void) {
         let query = LCQuery(className: "_Conversation")
         query.whereKey("m", .containedIn([currentUserId]))  // 确保查询包含当前用户
+        query.whereKey("unique", .equalTo(true))
+        query.whereKey("attr", .equalTo(["isPrivate": true]))
+
         query.find { result in
             switch result {
             case .success(let conversations):
-                var chats: [PrivateChat] = []
+                var chats: [PrivateChatList] = []
                 for conversation in conversations {
                     // 获取对方的ID（排除当前用户）
                     if let clientIDs = conversation["m"]?.arrayValue as? [String] {
                         if let partnerId = clientIDs.first(where: { $0 != currentUserId }) {
                             LeanCloudService.fetchUserInfo(for: partnerId) { username, avatarURL in
-                                let chat = PrivateChat(
+                                let chat = PrivateChatList(
                                     partnerId: partnerId,
                                     partnerUsername: username,
                                     partnerAvatarURL: avatarURL
@@ -705,6 +708,69 @@ struct LeanCloudService {
             }
         }
     }
+    
+    
+    // 获取群聊列表
+    static func fetchGroupChats(for currentUserId: String, completion: @escaping (Result<[GroupChatList], Error>) -> Void) {
+        let query = LCQuery(className: "Activity")
+        query.whereKey("participantIds", .containedIn([currentUserId]))  // 确保查询包含当前用户
+        query.find { result in
+            switch result {
+            case .success(let activities):
+                var groupChats: [GroupChatList] = []
+                let totalActivities = activities.count
+                var completedActivities = 0
+                
+                // 如果没有活动，直接返回空数组
+                if totalActivities == 0 {
+                    completion(.success([]))
+                    return
+                }
+                
+                for activity in activities {
+                    guard let groupChatId = activity["groupChatId"]?.stringValue else {
+                        completedActivities += 1
+                        if completedActivities == totalActivities {
+                            completion(.success(groupChats))  // 所有活动处理完成后调用 completion
+                        }
+                        continue  // 如果没有 groupChatId 跳过当前活动
+                    }
+
+                    // 查询 _Conversation 表来获取群聊信息
+                    let conversationQuery = LCQuery(className: "_Conversation")
+                    conversationQuery.whereKey("objectId", .equalTo(groupChatId))  // 查找指定的群聊
+
+                    conversationQuery.find { result in
+                        switch result {
+                        case .success(let conversations):
+                            for conversation in conversations {
+                                if let participantIds = conversation["m"]?.arrayValue as? [String] {
+                                    // 获取活动名称
+                                    let activityName = activity["activityName"]?.stringValue ?? "未知活动"
+                                    let activityId = activity.objectId?.stringValue ?? "未知活动ID"
+                                    // 创建 GroupChatList 对象
+                                    let groupChat = GroupChatList(groupChatId: groupChatId, activityId: activityId, participantIds: participantIds, activityName: activityName)
+                                    groupChats.append(groupChat)
+                                }
+                            }
+                        case .failure(let error):
+                            print("Error fetching conversation for group chat: \(error)")
+                        }
+                        
+                        // 无论成功或失败，都增加完成计数
+                        completedActivities += 1
+                        if completedActivities == totalActivities {
+                            completion(.success(groupChats))  // 所有活动处理完成后调用 completion
+                        }
+                    }
+                }
+            case .failure(let error):
+                print("Error fetching activities: \(error)")
+                completion(.failure(error))
+            }
+        }
+    }
+
     
     
     // 获取私信对方的信息（头像和用户名）

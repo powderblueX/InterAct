@@ -19,7 +19,7 @@ struct PrivateChatView: View {
     var body: some View {
         VStack(spacing: 0) {
             Text(viewModel.chat?.partnerUsername ?? "加载中...")
-                .font(.title)
+                .font(.title2)
                 .fontWeight(.bold)
                 .padding()
             
@@ -28,7 +28,7 @@ struct PrivateChatView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(viewModel.messages) { message in
-                            MessageRowView(message: message, isCurrentUser: message.senderId != viewModel.currentUserId, chat: viewModel.chat ?? PrivateChat(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: ""))
+                            PrivateMessageRowView(message: message, isCurrentUser: message.senderId == viewModel.currentUserId, chat: viewModel.chat ?? PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: ""))
                                 .id(message.id)  // 给每条消息设置唯一的 id
                         }
                     }

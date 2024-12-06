@@ -25,6 +25,7 @@ struct User: Identifiable{
     var birthday: Date      // 用户生日
     var gender: String      // 用户性别
     var interest: Array<String> // 用户兴趣
+    var exp: Int
 }
 
 

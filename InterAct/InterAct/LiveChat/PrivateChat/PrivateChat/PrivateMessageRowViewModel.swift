@@ -7,7 +7,7 @@
 
 import Foundation
 
-class MessageRowViewModel: ObservableObject {
+class PrivateMessageRowViewModel: ObservableObject {
     @Published var activityId: String? = nil
     
     func updateContent(content: String) -> String {
