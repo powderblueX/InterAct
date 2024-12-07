@@ -9,6 +9,7 @@ import Foundation
 
 class PrivateMessageRowViewModel: ObservableObject {
     @Published var activityId: String? = nil
+    @Published var activityName: String? = nil
     
     func updateContent(content: String) -> String {
         var updatedContent: String = content
@@ -22,6 +23,7 @@ class PrivateMessageRowViewModel: ObservableObject {
                 activityId = activity.activityId
                 // 更新文本为活动名称
                 updatedContent = "我想参加您发起的活动：“\(activity.activityName)”"
+                activityName = activity.activityName
             } else {
                 // 如果 JSON 解析失败，显示原始文本
                 updatedContent = content

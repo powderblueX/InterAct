@@ -11,6 +11,9 @@ struct PrivateChatView: View {
     @StateObject private var viewModel: PrivateChatViewModel
     @State private var messageText: String = ""
     @State private var selectedImage: UIImage?
+    @State private var isAgreeable: Int = 0
+    @State private var activityId: String = ""
+    @State private var activityName: String = ""
     
     init(currentUserId: String, recipientUserId: String, sendParticipateIn: SendParticipateIn? = nil) {
         _viewModel = StateObject(wrappedValue: PrivateChatViewModel(currentUserId: currentUserId, recipientUserId: recipientUserId, sendParticipateIn: sendParticipateIn ))
@@ -31,7 +34,7 @@ struct PrivateChatView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(viewModel.messages) { message in
-                            PrivateMessageRowView(message: message, isCurrentUser: message.senderId == viewModel.currentUserId, chat: viewModel.chat ?? PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "", partnerGender: "加载中...", partnerExp: 0))
+                            PrivateMessageRowView(isAgreeable: $isAgreeable, activityId: $activityId, activityName: $activityName, message: message, isCurrentUser: message.senderId == viewModel.currentUserId, chat: viewModel.chat ?? PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "", partnerGender: "加载中...", partnerExp: 0))
                                 .id(message.id)  // 给每条消息设置唯一的 id
                         }
                     }
@@ -48,6 +51,28 @@ struct PrivateChatView: View {
                     if let lastMessage = viewModel.messages.last {
                         proxy.scrollTo(lastMessage.id, anchor: .bottom)
                     }
+                }
+                .onChange(of: isAgreeable) {
+                    switch isAgreeable {
+                    case 1:
+                        viewModel.sendMessage("好的，我同意你参加：“\(activityName)”")
+                        if let userId = viewModel.chat?.partnerId {
+                            // 调用静态方法
+                            LeanCloudService.addUserToConversationAndActivity(userId: userId, activityId: activityId) { success, message in
+                                if success {
+                                    print(message)  // 成功消息
+                                } else {
+                                    print("Error: \(message)")  // 失败消息
+                                }
+                            }
+                        }
+                    case -1:
+                        viewModel.sendMessage("抱歉，我拒绝你来参加：“\(activityName)”")
+                    default: break
+                    }
+                    activityId = ""
+                    activityName = ""
+                    isAgreeable = 0
                 }
             }
             

@@ -774,7 +774,6 @@ struct LeanCloudService {
     }
 
     
-    
     // 获取私信对方的信息（头像和用户名）
     static func fetchUserInfo(for userId: String, completion: @escaping (String, String, String, Int) -> Void) {
         let query = LCQuery(className: "_User")
@@ -795,7 +794,7 @@ struct LeanCloudService {
     }
     
     
-    // 定义静态方法来获取活动数据
+    // 获取活动数据
     static func fetchActivitiesFromLeanCloud(completion: @escaping ([HeatmapActivity]?, Error?) -> Void) {
         let query = LCQuery(className: "Activity")
         
@@ -826,4 +825,69 @@ struct LeanCloudService {
             }
         }
     }
+    
+    
+    // 用户参加活动
+    static func addUserToConversationAndActivity(userId: String, activityId: String, completion: @escaping (Bool, String) -> Void) {
+        let activityQuery = LCQuery(className: "Activity")
+        activityQuery.whereKey("objectId", .equalTo(activityId))
+        activityQuery.getFirst { result in
+            switch result {
+            case .success(let activity):
+                // 查询 `_Conversation` 对象
+                guard let groupChatId = activity["groupChatId"]?.stringValue else {
+                    completion(false, "GroupChatId not found")
+                    return
+                }
+                
+                let conversationQuery = LCQuery(className: "_Conversation")
+                conversationQuery.whereKey("objectId", .equalTo(groupChatId))
+                conversationQuery.getFirst { result in
+                    switch result {
+                    case .success(let conversation):
+                        // 添加用户到 "m" 字段
+                        do {
+                            try conversation.append("m", element: userId)
+                            // 保存更新后的 `_Conversation` 对象
+                            conversation.save { saveResult in
+                                switch saveResult {
+                                case .success:
+                                    do {
+                                        try activity.append("participantIds", element: userId)
+                                        
+                                        // 保存更新后的 `Activity` 对象
+                                        activity.save { saveResult in
+                                            switch saveResult {
+                                            case .success:
+                                                print("Successfully added user to Activity.participantIds")
+                                                completion(true, "Successfully added user to both _Conversation and Activity.")
+                                            case .failure(let error):
+                                                print("Failed to update Activity: \(error.localizedDescription)")
+                                                completion(false, "Failed to update Activity.")
+                                            }
+                                        }
+                                    } catch {
+                                        completion(false, "Failed to update Activity.")
+                                    }
+                                    print("Successfully added user to _Conversation.m")
+                                case .failure(let error):
+                                    print("Failed to update _Conversation: \(error)")
+                                    completion(false, "Failed to update _Conversation.")
+                                }
+                            }
+                        } catch {
+                            print(error.localizedDescription)
+                        }
+                    case .failure(let error):
+                        print("Failed to query _Conversation: \(error.localizedDescription)")
+                        completion(false, "Failed to find conversation.")
+                    }
+                }
+            case .failure(let error):
+                print("Failed to query Activity: \(error.localizedDescription)")
+                completion(false, "Failed to find activity.")
+            }
+        }
+    }
+    
 }

@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct PrivateMessageRowView: View {
+    @Binding var isAgreeable: Int
+    @Binding var activityId: String
+    @Binding var activityName: String
     @StateObject private var viewModel = PrivateMessageRowViewModel()
     @State var message: Message
     let isCurrentUser: Bool
@@ -55,28 +58,34 @@ struct PrivateMessageRowView: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                             
-                            Button(action: {
-
-                            }) {
-                                Text("同意")
-                                    .padding(3)
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
-                                    .font(.subheadline)  // 调整字体大小
-                                    .frame(width: 50, height: 10)  // 限制宽度和高度
-                            }
-                            
-                            Button(action: {
-
-                            }) {
-                                Text("拒绝")
-                                    .padding(3)
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
-                                    .font(.subheadline)  // 调整字体大小
-                                    .frame(width: 50, height: 10)  // 限制宽度和高度
+                            HStack {
+                                Button(action: {
+                                    isAgreeable = 1
+                                    self.activityId = viewModel.activityId ?? ""
+                                    self.activityName = viewModel.activityName ?? "加载中..."
+                                }) {
+                                    Text("同意")
+                                        .padding(3)
+                                        .background(Color.blue)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                        .font(.subheadline)  // 调整字体大小
+                                        .frame(width: 50, height: 10)  // 限制宽度和高度
+                                }
+                                
+                                Button(action: {
+                                    isAgreeable = -1
+                                    self.activityId = viewModel.activityId ?? ""
+                                    self.activityName = viewModel.activityName ?? "加载中..."
+                                }) {
+                                    Text("拒绝")
+                                        .padding(3)
+                                        .background(Color.blue)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                        .font(.subheadline)  // 调整字体大小
+                                        .frame(width: 50, height: 10)  // 限制宽度和高度
+                                }
                             }
                         }
                         .padding(.top,3)
