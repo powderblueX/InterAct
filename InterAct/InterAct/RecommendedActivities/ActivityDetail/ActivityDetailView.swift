@@ -153,10 +153,10 @@ struct ActivityDetailView: View {
                                             .foregroundColor(.white)
                                             .padding()
                                             .frame(maxWidth: 150)
-                                            .background(.blue)
+                                            .background(viewModel.checkParticipantButtonDisabled() ? .gray : .blue)
                                             .cornerRadius(10)
                                     }
-                                    .disabled(viewModel.currentUserId.isEmpty || ((viewModel.activity?.hostId) == nil))
+                                    .disabled(viewModel.checkParticipantButtonDisabled())
                                 }
                             }
                         }

@@ -688,11 +688,13 @@ struct LeanCloudService {
                     // 获取对方的ID（排除当前用户）
                     if let clientIDs = conversation["m"]?.arrayValue as? [String] {
                         if let partnerId = clientIDs.first(where: { $0 != currentUserId }) {
-                            LeanCloudService.fetchUserInfo(for: partnerId) { username, avatarURL in
+                            LeanCloudService.fetchUserInfo(for: partnerId) { username, avatarURL, gender, exp in
                                 let chat = PrivateChatList(
                                     partnerId: partnerId,
                                     partnerUsername: username,
-                                    partnerAvatarURL: avatarURL
+                                    partnerAvatarURL: avatarURL,
+                                    partnerGender: gender,
+                                    partnerExp: exp
                                 )
                                 chats.append(chat)
                                 // 返回结果
@@ -774,7 +776,7 @@ struct LeanCloudService {
     
     
     // 获取私信对方的信息（头像和用户名）
-    static func fetchUserInfo(for userId: String, completion: @escaping (String, String) -> Void) {
+    static func fetchUserInfo(for userId: String, completion: @escaping (String, String, String, Int) -> Void) {
         let query = LCQuery(className: "_User")
         query.whereKey("objectId", .equalTo(userId))
         query.getFirst { result in
@@ -782,10 +784,12 @@ struct LeanCloudService {
             case .success(let object):
                 let username = object["username"]?.stringValue ?? "未知用户"
                 let avatarURL = object["avatarURL"]?.stringValue ?? ""
-                completion(username, avatarURL)
+                let gender = object["gender"]?.stringValue ?? ""
+                let exp = object["exp"]?.intValue ?? 0
+                completion(username, avatarURL, gender, exp)
             case .failure(let error):
                 print("获取用户信息失败: \(error.localizedDescription)")
-                completion("未知用户", "") // 默认返回值
+                completion("未知用户", "", "", 0) // 默认返回值
             }
         }
     }

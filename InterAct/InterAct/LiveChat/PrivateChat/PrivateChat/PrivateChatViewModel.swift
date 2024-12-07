@@ -13,7 +13,7 @@ import UIKit
 // TODO: 实现退出页面后断开连接
 
 class PrivateChatViewModel: ObservableObject {
-    @Published var chat: PrivateChatList? = PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "")
+    @Published var chat: PrivateChatList? = PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "", partnerGender: "加载中...", partnerExp: 0)
     
     // 当前用户
     let currentUserId: String
@@ -45,13 +45,15 @@ class PrivateChatViewModel: ObservableObject {
     
     func fetchUserInfo(for userId: String) {
         // 调用 LeanCloudService 来获取用户信息（用户名和头像URL）
-        LeanCloudService.fetchUserInfo(for: userId) { [weak self] username, avatarURL in
+        LeanCloudService.fetchUserInfo(for: userId) { [weak self] username, avatarURL, gender, exp in
             // 更新 PrivateChat 实例
             if let chat = self?.chat {
                 self?.chat = PrivateChatList(
                     partnerId: chat.partnerId,
                     partnerUsername: username,
-                    partnerAvatarURL: avatarURL
+                    partnerAvatarURL: avatarURL,
+                    partnerGender: gender,
+                    partnerExp: exp
                 )
             }
         }

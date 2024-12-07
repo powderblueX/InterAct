@@ -7,7 +7,6 @@
 
 import Foundation
 import LeanCloud
-import UIKit
 
 class PrivateChatListViewModel: ObservableObject {
     @Published var privateChats: [PrivateChatList] = []   // 用于存储私聊列表

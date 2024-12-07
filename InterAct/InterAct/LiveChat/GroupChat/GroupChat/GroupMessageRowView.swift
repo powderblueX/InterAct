@@ -30,7 +30,9 @@ struct GroupMessageRowView: View {
 
     private var partnerMessageView: some View {
         HStack(alignment: .top) {
-            avatarImage(url: senderInfo.avatarURL?.absoluteString ?? "")
+            NavigationLink(destination: UserProfileView(userInfo: senderInfo)){
+                avatarImage(url: senderInfo.avatarURL?.absoluteString ?? "")
+            }
             
             VStack(alignment: .leading) {
                 Text(senderInfo.username)

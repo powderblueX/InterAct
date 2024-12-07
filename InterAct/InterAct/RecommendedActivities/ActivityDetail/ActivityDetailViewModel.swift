@@ -67,6 +67,18 @@ class ActivityDetailViewModel: NSObject, ObservableObject, CLLocationManagerDele
         }
     }
     
+    func checkParticipantButtonDisabled() -> Bool {
+        return ((activity?.hostId) == nil) || activity?.participantIds.count == activity?.participantsCount || checkIsCurrentUserInActivity()
+    }
+    
+    func checkIsCurrentUserInActivity() -> Bool {
+        if let isParticipant = activity?.participantIds.contains(currentUserId) {
+            return isParticipant
+        } else {
+            return false
+        }
+    }
+    
     func getCurrentId(){
         guard let objectId = UserDefaults.standard.string(forKey: "objectId") else {
             LeanCloudService.logout()

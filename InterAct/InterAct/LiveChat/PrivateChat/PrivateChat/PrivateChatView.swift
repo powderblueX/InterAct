@@ -18,17 +18,20 @@ struct PrivateChatView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Text(viewModel.chat?.partnerUsername ?? "加载中...")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding()
+            NavigationLink(destination: UserProfileView(userInfo: ParticipantInfo(id: viewModel.chat?.partnerId ?? "", username: viewModel.chat?.partnerUsername ?? "加载中...", avatarURL: URL(string: viewModel.chat?.partnerAvatarURL ?? ""), gender: viewModel.chat?.partnerGender ?? "加载中..." , exp: viewModel.chat?.partnerExp ?? 0))){
+                Text(viewModel.chat?.partnerUsername ?? "加载中...")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding()
+                    .foregroundStyle(.blue)
+            }
             
             // 消息列表
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(viewModel.messages) { message in
-                            PrivateMessageRowView(message: message, isCurrentUser: message.senderId == viewModel.currentUserId, chat: viewModel.chat ?? PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: ""))
+                            PrivateMessageRowView(message: message, isCurrentUser: message.senderId == viewModel.currentUserId, chat: viewModel.chat ?? PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "", partnerGender: "加载中...", partnerExp: 0))
                                 .id(message.id)  // 给每条消息设置唯一的 id
                         }
                     }

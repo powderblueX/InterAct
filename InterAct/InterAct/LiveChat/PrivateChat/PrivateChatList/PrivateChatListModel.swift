@@ -12,6 +12,8 @@ struct PrivateChatList {
     let partnerId: String
     let partnerUsername: String
     let partnerAvatarURL: String
+    let partnerGender: String
+    let partnerExp: Int
 }
 
 

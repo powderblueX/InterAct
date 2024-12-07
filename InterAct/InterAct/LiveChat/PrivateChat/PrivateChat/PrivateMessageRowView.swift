@@ -33,8 +33,11 @@ struct PrivateMessageRowView: View {
 
     private var partnerMessageView: some View {
         HStack(alignment: .top) {
-            avatarImage(url: chat.partnerAvatarURL)
             
+            NavigationLink(destination: UserProfileView(userInfo: ParticipantInfo(id: chat.partnerId, username: chat.partnerUsername, avatarURL: URL(string: chat.partnerAvatarURL), gender: chat.partnerGender , exp: chat.partnerExp))){
+                avatarImage(url: chat.partnerAvatarURL)
+            }
+                        
             VStack(alignment: .leading) {
                 messageContent
                 messageTimestamp

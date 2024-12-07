@@ -19,9 +19,13 @@ struct GroupChatView: View {
     var body: some View {
         VStack {
             // 显示群聊信息
-            Text("\(groupChat.activityName)")
-                .font(.title2)
-                .padding()
+            NavigationLink(destination: ActivityDetailView(activityId: groupChat.activityId)){
+                Text("\(groupChat.activityName)")
+                    .font(.title2)
+                    .padding()
+                    .foregroundStyle(.orange)
+            }
+            .buttonStyle(PlainButtonStyle())
             
             //                    // 显示群聊中的历史消息
             //                    List(viewModel.messages, id: \.timestamp) { message in
