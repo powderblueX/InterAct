@@ -8,6 +8,7 @@
 import SwiftUI
 import LeanCloud
 
+// TODO: 更新列表
 struct GroupChatListView: View {
     @StateObject private var viewModel = GroupChatListViewModel()
     
@@ -25,12 +26,18 @@ struct GroupChatListView: View {
                         VStack(alignment: .leading) {
                             Text(chat.activityName)
                                 .font(.headline)
+                                .lineLimit(1)
+                            Text("\(viewModel.formatDate(chat.lmDate))")
+                                .font(.subheadline)
+                                .environment(\.locale, Locale(identifier: "zh_CN"))
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 10)  
                         
-                        Spacer()
-
                         NavigationLink(destination: GroupChatView(groupChat: chat)) {
+                            
                         }
+                        .frame(maxWidth: 30, alignment: .trailing)
                     }
                 }
             }
@@ -51,6 +58,4 @@ struct GroupChatListView: View {
         return formatter.string(from: date)
     }
 }
-
-
 

@@ -11,6 +11,7 @@ import CoreLocation
 import UIKit
 
 struct LeanCloudService {
+    
     // 用户登录
     static func login(username: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
         // LCUser.logIn 是异步方法，不会抛出错误，因此直接调用即可
@@ -686,6 +687,7 @@ struct LeanCloudService {
                 var chats: [PrivateChatList] = []
                 for conversation in conversations {
                     // 获取对方的ID（排除当前用户）
+                    let lmDate = conversation["lm"]?.dateValue ?? Date()
                     if let clientIDs = conversation["m"]?.arrayValue as? [String] {
                         if let partnerId = clientIDs.first(where: { $0 != currentUserId }) {
                             LeanCloudService.fetchUserInfo(for: partnerId) { username, avatarURL, gender, exp in
@@ -694,7 +696,8 @@ struct LeanCloudService {
                                     partnerUsername: username,
                                     partnerAvatarURL: avatarURL,
                                     partnerGender: gender,
-                                    partnerExp: exp
+                                    partnerExp: exp,
+                                    lmDate: lmDate
                                 )
                                 chats.append(chat)
                                 // 返回结果
@@ -750,8 +753,9 @@ struct LeanCloudService {
                                     // 获取活动名称
                                     let activityName = activity["activityName"]?.stringValue ?? "未知活动"
                                     let activityId = activity.objectId?.stringValue ?? "未知活动ID"
+                                    let lmDate = conversation["lm"]?.dateValue ?? Date()
                                     // 创建 GroupChatList 对象
-                                    let groupChat = GroupChatList(groupChatId: groupChatId, activityId: activityId, participantIds: participantIds, activityName: activityName)
+                                    let groupChat = GroupChatList(groupChatId: groupChatId, activityId: activityId, participantIds: participantIds, activityName: activityName, lmDate: lmDate)
                                     groupChats.append(groupChat)
                                 }
                             }
@@ -762,6 +766,7 @@ struct LeanCloudService {
                         // 无论成功或失败，都增加完成计数
                         completedActivities += 1
                         if completedActivities == totalActivities {
+                            
                             completion(.success(groupChats))  // 所有活动处理完成后调用 completion
                         }
                     }
@@ -794,8 +799,43 @@ struct LeanCloudService {
     }
     
     
+    // 获取本人创建的、还未开始的活动
+    static func fetchFutureActivities(for currentUserId: String, completion: @escaping (Result<[String: [String]], Error>) -> Void) {
+        // 获取当前时间
+        let now = Date()
+        
+        // 查询 Activity 表
+        let query = LCQuery(className: "Activity")
+        query.whereKey("hostId", .equalTo(currentUserId))   // 查询 hostId 为当前用户的活动
+        query.whereKey("activityTime", .greaterThan(now))   // 查询活动时间在当前时间之后的活动
+        
+        // 执行查询
+        query.find { result in
+            switch result {
+            case .success(let activities):
+                var activityDict: [String: [String]] = [:]
+                
+                // 遍历查询到的活动，获取每个活动的 id 和 participantIds
+                for activity in activities {
+                    if let activityId = activity.objectId?.stringValue, // 获取活动的 id
+                       let participants = activity["participantIds"]?.arrayValue as? [String] {
+                        // 将活动 id 和参与者 id 添加到字典中
+                        activityDict[activityId] = participants
+                    }
+                }
+                
+                // 返回字典
+                completion(.success(activityDict))
+                
+            case .failure(let error):
+                completion(.failure(error))  // 错误处理
+            }
+        }
+    }
+    
+    
     // 获取活动数据
-    static func fetchActivitiesFromLeanCloud(completion: @escaping ([HeatmapActivity]?, Error?) -> Void) {
+    static func fetchActivitiesFromDB(completion: @escaping ([HeatmapActivity]?, Error?) -> Void) {
         let query = LCQuery(className: "Activity")
         
         query.find { result in

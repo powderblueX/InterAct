@@ -10,5 +10,6 @@ import Foundation
 class GroupMessageRowViewModel: ObservableObject {
     @Published var activityId: String? = nil
     
+
 }
 

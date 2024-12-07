@@ -20,6 +20,20 @@ class GroupChatViewModel: ObservableObject {
     
     @Published var participantsInfo: [ParticipantInfo]? = nil
     
+    // 数据绑定：通过这些闭包通知 View 层更新
+    var onMessagesUpdated: (([Message]) -> Void)?
+    // 当前消息列表
+    @Published var messages: [Message] = [] {
+        didSet {
+            self.onMessagesUpdated?(messages)
+        }
+    }
+    
+    // 存储IMClient实例
+    private var client: IMClient?
+    private var conversation: IMConversation?
+    
+    
     func fetchAllparticipantsInfo(ParticipantIds: [String]) {
         var fetchedParticipants: [ParticipantInfo] = []
         let dispatchGroup = DispatchGroup() // 用于同步多个异步任务
@@ -44,19 +58,6 @@ class GroupChatViewModel: ObservableObject {
             self.participantsInfo = fetchedParticipants
         }
     }
-    
-    // 数据绑定：通过这些闭包通知 View 层更新
-    var onMessagesUpdated: (([Message]) -> Void)?
-    // 当前消息列表
-    @Published var messages: [Message] = [] {
-        didSet {
-            self.onMessagesUpdated?(messages)
-        }
-    }
-    
-    // 存储IMClient实例
-    private var client: IMClient?
-    private var conversation: IMConversation?
     
     func initializeIMClient(completion: @escaping (Bool) -> Void) {
         // 从 UserDefaults 获取当前用户的 ID

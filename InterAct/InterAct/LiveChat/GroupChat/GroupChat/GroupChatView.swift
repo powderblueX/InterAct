@@ -17,27 +17,7 @@ struct GroupChatView: View {
     
     
     var body: some View {
-        VStack {
-            // 显示群聊信息
-            NavigationLink(destination: ActivityDetailView(activityId: groupChat.activityId)){
-                Text("\(groupChat.activityName)")
-                    .font(.title2)
-                    .padding()
-                    .foregroundStyle(.orange)
-            }
-            .buttonStyle(PlainButtonStyle())
-            
-            //                    // 显示群聊中的历史消息
-            //                    List(viewModel.messages, id: \.timestamp) { message in
-            //                        Text(message.content)
-            //                            .padding()
-            //                            .background(message.senderId == viewModel.currentUserId ? Color.blue : Color.gray.opacity(0.3))
-            //                            .foregroundColor(.white)
-            //                            .cornerRadius(8)
-            //                            .frame(maxWidth: .infinity, alignment: message.senderId == viewModel.currentUserId ? .trailing : .leading)
-            //                    }
-            //                    .listStyle(PlainListStyle())
-            
+        VStack {            
             ScrollViewReader { proxy in
                 ScrollView {
                     messageContent
@@ -112,7 +92,11 @@ struct GroupChatView: View {
         .onDisappear{
             viewModel.closeConnection()
         }
-        .navigationBarTitle("群聊", displayMode: .inline) // TODO: 推广
+        .navigationBarTitle("\(groupChat.activityName)(\(groupChat.participantIds.count))", displayMode: .inline) // TODO: 推广
+        .navigationBarItems(trailing: NavigationLink(destination: GroupChatManageView(groupChat: groupChat)) {
+            Image(systemName: "gearshape")
+                .imageScale(.large)
+        })
         .alert(isPresented: $viewModel.showAlert) {
             Alert(title: Text("提示"), message: Text(viewModel.alertMessage), dismissButton: .default(Text("OK")))
         }

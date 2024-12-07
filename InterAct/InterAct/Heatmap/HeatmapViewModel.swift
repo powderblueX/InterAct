@@ -26,7 +26,7 @@ class HeatmapViewModel: ObservableObject {
     @Published private var zoomScale: Double = 1.0 // 记录地图缩放比例
     
     func loadHeatmapActivities() {
-        LeanCloudService.fetchActivitiesFromLeanCloud { [weak self] activities, error in
+        LeanCloudService.fetchActivitiesFromDB { [weak self] activities, error in
             guard let self = self else { return }
             
             if let activities = activities {

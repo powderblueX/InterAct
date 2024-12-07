@@ -11,11 +11,14 @@ struct PrivateMessageRowView: View {
     @Binding var isAgreeable: Int
     @Binding var activityId: String
     @Binding var activityName: String
+    
     @StateObject private var viewModel = PrivateMessageRowViewModel()
     @State var message: Message
+    @State var activityDict: [String: [String]]
     let isCurrentUser: Bool
     let chat: PrivateChatList
-
+    let currentUserId: String
+    
     var body: some View {
         HStack {
             if isCurrentUser {
@@ -58,33 +61,35 @@ struct PrivateMessageRowView: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                             
-                            HStack {
-                                Button(action: {
-                                    isAgreeable = 1
-                                    self.activityId = viewModel.activityId ?? ""
-                                    self.activityName = viewModel.activityName ?? "加载中..."
-                                }) {
-                                    Text("同意")
-                                        .padding(3)
-                                        .background(Color.blue)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(8)
-                                        .font(.subheadline)  // 调整字体大小
-                                        .frame(width: 50, height: 10)  // 限制宽度和高度
-                                }
-                                
-                                Button(action: {
-                                    isAgreeable = -1
-                                    self.activityId = viewModel.activityId ?? ""
-                                    self.activityName = viewModel.activityName ?? "加载中..."
-                                }) {
-                                    Text("拒绝")
-                                        .padding(3)
-                                        .background(Color.blue)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(8)
-                                        .font(.subheadline)  // 调整字体大小
-                                        .frame(width: 50, height: 10)  // 限制宽度和高度
+                            if !viewModel.checkIsParticipatory(activityDict: activityDict, chat: chat) {
+                                HStack {
+                                    Button(action: {
+                                        isAgreeable = 1
+                                        self.activityId = viewModel.activityId ?? ""
+                                        self.activityName = viewModel.activityName ?? "加载中..."
+                                    }) {
+                                        Text("同意")
+                                            .padding(3)
+                                            .background(Color.blue)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(8)
+                                            .font(.subheadline)  // 调整字体大小
+                                            .frame(width: 50, height: 10)  // 限制宽度和高度
+                                    }
+                                    
+                                    Button(action: {
+                                        isAgreeable = -1
+                                        self.activityId = viewModel.activityId ?? ""
+                                        self.activityName = viewModel.activityName ?? "加载中..."
+                                    }) {
+                                        Text("拒绝")
+                                            .padding(3)
+                                            .background(Color.blue)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(8)
+                                            .font(.subheadline)  // 调整字体大小
+                                            .frame(width: 50, height: 10)  // 限制宽度和高度
+                                    }
                                 }
                             }
                         }

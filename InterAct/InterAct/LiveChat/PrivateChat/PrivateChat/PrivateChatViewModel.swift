@@ -13,7 +13,8 @@ import UIKit
 // TODO: 实现退出页面后断开连接
 
 class PrivateChatViewModel: ObservableObject {
-    @Published var chat: PrivateChatList? = PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "", partnerGender: "加载中...", partnerExp: 0)
+    @Published var chat: PrivateChatList? = PrivateChatList(partnerId: "", partnerUsername: "加载中...", partnerAvatarURL: "", partnerGender: "加载中...", partnerExp: 0, lmDate: Date())
+    @Published var activityDict: [String: [String]]? = nil
     
     // 当前用户
     let currentUserId: String
@@ -43,17 +44,31 @@ class PrivateChatViewModel: ObservableObject {
         self.sendParticipateIn = sendParticipateIn
     }
     
+    func fetchMyFutureActivity() {
+        LeanCloudService.fetchFutureActivities(for: currentUserId) { result in
+            switch result {
+            case .success(let activityDict):
+                print("Fetched activities: \(activityDict)")
+                self.activityDict = activityDict
+                // activityDict 是一个字典，包含活动 ID 和参与者 ID 数组
+            case .failure(let error):
+                print("Failed to fetch activities: \(error.localizedDescription)")
+            }
+        }
+    }
+    
     func fetchUserInfo(for userId: String) {
         // 调用 LeanCloudService 来获取用户信息（用户名和头像URL）
         LeanCloudService.fetchUserInfo(for: userId) { [weak self] username, avatarURL, gender, exp in
             // 更新 PrivateChat 实例
-            if let chat = self?.chat {
+            if (self?.chat) != nil {
                 self?.chat = PrivateChatList(
-                    partnerId: chat.partnerId,
+                    partnerId: userId,
                     partnerUsername: username,
                     partnerAvatarURL: avatarURL,
                     partnerGender: gender,
-                    partnerExp: exp
+                    partnerExp: exp,
+                    lmDate: self?.messages.last?.timestamp ?? Date()
                 )
             }
         }
@@ -70,7 +85,7 @@ class PrivateChatViewModel: ObservableObject {
                 return
             }
         }
-        
+        print(chat ?? "123")
         self.setupMessageReceiving()
         
         client?.open { [weak self] result in

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import LeanCloud
 
 // 私聊会话模型
 struct PrivateChatList {
@@ -14,6 +15,7 @@ struct PrivateChatList {
     let partnerAvatarURL: String
     let partnerGender: String
     let partnerExp: Int
+    let lmDate: Date
 }
 
 

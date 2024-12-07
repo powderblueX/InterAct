@@ -8,6 +8,7 @@
 import SwiftUI
 import LeanCloud
 
+// TODO: 更新列表
 struct PrivateChatListView: View {
     @StateObject private var viewModel = PrivateChatListViewModel()
     
@@ -41,12 +42,17 @@ struct PrivateChatListView: View {
                         VStack(alignment: .leading) {
                             Text(chat.partnerUsername)
                                 .font(.headline)
+                                .lineLimit(1)
+                            Text("\(viewModel.formatDate(chat.lmDate))")
+                                .font(.subheadline)
+                                .environment(\.locale, Locale(identifier: "zh_CN"))
                         }
-                        
-                        Spacer()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 10)  
                         
                         NavigationLink(destination: PrivateChatView(currentUserId: viewModel.currentUserId, recipientUserId: chat.partnerId)) {
                         }
+                        .frame(maxWidth: 30, alignment: .trailing)
                     }
                 }
             }

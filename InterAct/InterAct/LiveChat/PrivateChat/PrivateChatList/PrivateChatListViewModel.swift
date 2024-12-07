@@ -10,10 +10,8 @@ import LeanCloud
 
 class PrivateChatListViewModel: ObservableObject {
     @Published var privateChats: [PrivateChatList] = []   // 用于存储私聊列表
-
     @Published var errorMessage: String? = nil         // 错误消息绑定
     @Published var isError: Bool = false
-    
     @Published var currentUserId: String = ""            // 当前用户ID
     
     init() {
@@ -30,7 +28,7 @@ class PrivateChatListViewModel: ObservableObject {
             switch result {
             case .success(let chats):
                 DispatchQueue.main.async {
-                    self?.privateChats = chats // 更新 UI
+                    self?.privateChats = chats.sorted(by: {$0.lmDate > $1.lmDate}) // 更新 UI
                 }
             case .failure(let error):
                 DispatchQueue.main.async {
@@ -39,6 +37,13 @@ class PrivateChatListViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"  // 格式化为：年-月-日 时:分:秒
+        return formatter.string(from: date)
     }
 //    func fetchGroupChats() {
 //        // 查询当前用户参与的私聊会话（包括自己作为创建者或接收者）

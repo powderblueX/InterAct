@@ -10,6 +10,8 @@ import Foundation
 class PrivateMessageRowViewModel: ObservableObject {
     @Published var activityId: String? = nil
     @Published var activityName: String? = nil
+    @Published var isParticipatory: Bool = false
+    
     
     func updateContent(content: String) -> String {
         var updatedContent: String = content
@@ -47,6 +49,15 @@ class PrivateMessageRowViewModel: ObservableObject {
             }
         }
         return nil
+    }
+    
+    func checkIsParticipatory(activityDict: [String: [String]], chat: PrivateChatList) -> Bool {
+        print(activityDict)
+        if let activityId = self.activityId {
+            return !activityDict.keys.contains(activityId) || (activityDict[activityId]?.contains(chat.partnerId) ?? true)
+        } else {
+            return true
+        }
     }
 }
 

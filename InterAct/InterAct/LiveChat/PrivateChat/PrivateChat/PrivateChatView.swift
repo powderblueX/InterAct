@@ -15,6 +15,7 @@ struct PrivateChatView: View {
     @State private var activityId: String = ""
     @State private var activityName: String = ""
     
+    
     init(currentUserId: String, recipientUserId: String, sendParticipateIn: SendParticipateIn? = nil) {
         _viewModel = StateObject(wrappedValue: PrivateChatViewModel(currentUserId: currentUserId, recipientUserId: recipientUserId, sendParticipateIn: sendParticipateIn ))
     }
@@ -28,13 +29,13 @@ struct PrivateChatView: View {
                     .padding()
                     .foregroundStyle(.blue)
             }
-            
+
             // 消息列表
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(viewModel.messages) { message in
-                            PrivateMessageRowView(isAgreeable: $isAgreeable, activityId: $activityId, activityName: $activityName, message: message, isCurrentUser: message.senderId == viewModel.currentUserId, chat: viewModel.chat ?? PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "", partnerGender: "加载中...", partnerExp: 0))
+                            PrivateMessageRowView(isAgreeable: $isAgreeable, activityId: $activityId, activityName: $activityName, message: message, activityDict: viewModel.activityDict ?? [:], isCurrentUser: message.senderId == viewModel.currentUserId, chat: viewModel.chat ?? PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "", partnerGender: "加载中...", partnerExp: 0, lmDate: Date()), currentUserId: viewModel.currentUserId)
                                 .id(message.id)  // 给每条消息设置唯一的 id
                         }
                     }
@@ -45,6 +46,7 @@ struct PrivateChatView: View {
                             proxy.scrollTo(lastMessage.id, anchor: .bottom)
                         }
                     }
+                    viewModel.fetchMyFutureActivity()
                 }
                 .onChange(of: viewModel.messages) {
                     // 当消息更新时滚动到底部
@@ -57,12 +59,14 @@ struct PrivateChatView: View {
                     case 1:
                         viewModel.sendMessage("好的，我同意你参加：“\(activityName)”")
                         if let userId = viewModel.chat?.partnerId {
-                            // 调用静态方法
-                            LeanCloudService.addUserToConversationAndActivity(userId: userId, activityId: activityId) { success, message in
-                                if success {
-                                    print(message)  // 成功消息
-                                } else {
-                                    print("Error: \(message)")  // 失败消息
+                            if !userId.isEmpty{
+                                // 调用静态方法 TODO: 可能需要改到VM中
+                                LeanCloudService.addUserToConversationAndActivity(userId: userId, activityId: activityId) { success, message in
+                                    if success {
+                                        print(message)  // 成功消息
+                                    } else {
+                                        print("Error: \(message)")  // 失败消息
+                                    }
                                 }
                             }
                         }
