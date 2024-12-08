@@ -32,12 +32,15 @@ struct GroupChatListView: View {
                                 .environment(\.locale, Locale(identifier: "zh_CN"))
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.leading, 10)  
+                        .padding(.leading, 10)
                         
-                        NavigationLink(destination: GroupChatView(groupChat: chat)) {
-                            
+                        Text("\(String(describing: chat.unreadMessagesCount))条未读")
+                            .font(.subheadline)
+                            .foregroundStyle(chat.unreadMessagesCount == 0 ? .blue : .red)
+                        
+                        NavigationLink(destination: GroupChatView(conversationID: chat.groupChatId, groupChat: chat)) {
                         }
-                        .frame(maxWidth: 30, alignment: .trailing)
+                        .frame(maxWidth: 20, alignment: .trailing)
                     }
                 }
             }

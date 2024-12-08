@@ -9,12 +9,15 @@ import SwiftUI
 import LeanCloud
 
 struct GroupChatView: View {
-    @StateObject var viewModel = GroupChatViewModel()  // 绑定视图模型
+    @StateObject private var viewModel: GroupChatViewModel  // 绑定视图模型
     @State var currentUser: LCUser = LCUser()
     @State var groupChat: GroupChatList
     
     @State private var messageText: String = ""  // 用户输入的消息内容
-    
+    init(conversationID: String, groupChat: GroupChatList) {
+        _viewModel = StateObject(wrappedValue: GroupChatViewModel(conversationID: conversationID))
+        self.groupChat = groupChat
+    }
     
     var body: some View {
         VStack {            
@@ -31,7 +34,9 @@ struct GroupChatView: View {
                     .onChange(of: viewModel.messages) {
                         // 当消息更新时滚动到底部
                         if let lastMessage = viewModel.messages.last {
-                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            withAnimation {
+                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
                         }
                     }
                 }
@@ -57,41 +62,19 @@ struct GroupChatView: View {
                 .padding(.trailing)
             }
             .padding()
-            
-            
-            //                Button(action: {
-            //                    // 创建或加入群聊
-            //                    viewModel.createOrJoinGroupChat(activityId: activityId, user: currentUser, participants: viewModel.participants) { success, errorMessage in
-            //                        if success {
-            //                            print("群聊加入成功")
-            //                            alertMessage = "成功加入群聊!"
-            //                        } else {
-            //                            print("群聊加入失败")
-            //                            alertMessage = errorMessage ?? "操作失败"
-            //                        }
-            //                        showAlert = true
-            //                    }
-            //                }) {
-            //                    Text(viewModel.groupChatID == nil ? "申请加入群聊" : "已加入群聊")
-            //                        .padding()
-            //                        .background(viewModel.groupChatID == nil ? Color.blue : Color.green)
-            //                        .foregroundColor(.white)
-            //                        .cornerRadius(8)
-            //                }
-            //                .padding(.bottom)
-            //            }
         }
         .onAppear {
-            viewModel.initializeIMClient(){ success in
-                if success{
-                    viewModel.joinGroupChat(with: groupChat)
-                }
-            }
+//            viewModel.initializeIMClient(){ success in
+//                if success{
+//                    viewModel.joinGroupChat(with: groupChat)
+//                }
+//            }
+            viewModel.joinGroupChat(with: groupChat)
             viewModel.fetchAllparticipantsInfo(ParticipantIds: groupChat.participantIds)
         }
-        .onDisappear{
-            viewModel.closeConnection()
-        }
+//        .onDisappear{
+//            viewModel.closeConnection()
+//        }
         .navigationBarTitle("\(groupChat.activityName)(\(groupChat.participantIds.count))", displayMode: .inline) // TODO: 推广
         .navigationBarItems(trailing: NavigationLink(destination: GroupChatManageView(groupChat: groupChat)) {
             Image(systemName: "gearshape")
@@ -110,16 +93,5 @@ struct GroupChatView: View {
                     .id(message.id)  // 给每条消息设置唯一的 id
             }
         }
-    }
-}
-
-
-extension IMMessage {
-    // 判断消息是否来自当前用户
-    var isMine: Bool {
-        guard let currentUserId = UserDefaults.standard.string(forKey: "objectId") else {
-            return false
-        }
-        return self.fromClientID == currentUserId  // 假设 'from' 属性表示消息的发送者 ID
     }
 }

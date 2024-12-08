@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import LeanCloud
 
 class GroupChatListViewModel: ObservableObject {
     @Published var groupChats: [GroupChatList] = []   // 用于存储私聊列表
@@ -18,7 +19,13 @@ class GroupChatListViewModel: ObservableObject {
         if let userId = UserDefaults.standard.string(forKey: "objectId") {
             self.currentUserId = userId
         }
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshGroupChats), name: .updateGroupChatList, object: nil)
     }
+    @objc private func refreshGroupChats() {
+        // 重新获取或更新未读消息数
+        fetchGroupChats()
+    }
+    
     
     func fetchGroupChats() {
         // 查询当前用户参与的私聊会话（包括自己作为创建者或接收者）
@@ -36,6 +43,7 @@ class GroupChatListViewModel: ObservableObject {
             }
         }
     }
+    
     func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "zh_CN")

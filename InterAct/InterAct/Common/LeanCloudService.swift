@@ -10,8 +10,7 @@ import LeanCloud
 import CoreLocation
 import UIKit
 
-struct LeanCloudService {
-    
+struct LeanCloudService { 
     // 用户登录
     static func login(username: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
         // LCUser.logIn 是异步方法，不会抛出错误，因此直接调用即可
@@ -717,66 +716,137 @@ struct LeanCloudService {
     
     // 获取群聊列表
     static func fetchGroupChats(for currentUserId: String, completion: @escaping (Result<[GroupChatList], Error>) -> Void) {
-        let query = LCQuery(className: "Activity")
-        query.whereKey("participantIds", .containedIn([currentUserId]))  // 确保查询包含当前用户
-        query.find { result in
-            switch result {
-            case .success(let activities):
-                var groupChats: [GroupChatList] = []
-                let totalActivities = activities.count
-                var completedActivities = 0
-                
-                // 如果没有活动，直接返回空数组
-                if totalActivities == 0 {
-                    completion(.success([]))
-                    return
-                }
-                
-                for activity in activities {
-                    guard let groupChatId = activity["groupChatId"]?.stringValue else {
-                        completedActivities += 1
-                        if completedActivities == totalActivities {
-                            completion(.success(groupChats))  // 所有活动处理完成后调用 completion
-                        }
-                        continue  // 如果没有 groupChatId 跳过当前活动
+        // 通过 IMClientManager 获取客户端
+        guard let client = IMClientManager.shared.getClient() else {
+            completion(.failure(NSError(domain: "IMClientError", code: 0, userInfo: [NSLocalizedDescriptionKey: "IMClient 未初始化"])))
+            return
+        }
+        
+        // 查询 _Conversation 表中包含当前用户的群聊
+        let query = client.conversationQuery
+        do {
+            try query.where("unique", .equalTo(true))
+            try query.where("attr", .equalTo(["isPrivate": false]))
+            try query.findConversations { result in
+                switch result {
+                case .success(let conversations):
+                    var groupChats: [GroupChatList] = []
+                    let totalConversations = conversations.count
+                    var completedConversations = 0
+                    
+                    // 如果没有群聊，直接返回空数组
+                    if totalConversations == 0 {
+                        completion(.success([]))
+                        return
                     }
-
-                    // 查询 _Conversation 表来获取群聊信息
-                    let conversationQuery = LCQuery(className: "_Conversation")
-                    conversationQuery.whereKey("objectId", .equalTo(groupChatId))  // 查找指定的群聊
-
-                    conversationQuery.find { result in
-                        switch result {
-                        case .success(let conversations):
-                            for conversation in conversations {
-                                if let participantIds = conversation["m"]?.arrayValue as? [String] {
-                                    // 获取活动名称
+                    
+                    for conversation in conversations {
+                        let groupChatId = conversation.ID
+                        
+                        // 查询 Activity 表中对应的活动信息
+                        let activityQuery = LCQuery(className: "Activity")
+                        activityQuery.whereKey("groupChatId", .equalTo(groupChatId))
+                        activityQuery.find { result in
+                            switch result {
+                            case .success(let activities):
+                                for activity in activities {
+                                    // 构造群聊对象
                                     let activityName = activity["activityName"]?.stringValue ?? "未知活动"
                                     let activityId = activity.objectId?.stringValue ?? "未知活动ID"
-                                    let lmDate = conversation["lm"]?.dateValue ?? Date()
-                                    // 创建 GroupChatList 对象
-                                    let groupChat = GroupChatList(groupChatId: groupChatId, activityId: activityId, participantIds: participantIds, activityName: activityName, lmDate: lmDate)
+                                    let participantIds = conversation.members ?? [] // 获取群聊成员
+                                    let lmDate = conversation.updatedAt ?? Date() // 群聊最后更新时间
+                                    
+                                    let groupChat = GroupChatList(
+                                        groupChatId: groupChatId,
+                                        activityId: activityId,
+                                        participantIds: participantIds,
+                                        activityName: activityName,
+                                        unreadMessagesCount: conversation.unreadMessageCount,
+                                        lmDate: lmDate
+                                    )
                                     groupChats.append(groupChat)
                                 }
+                            case .failure(let error):
+                                print("Error fetching activity: \(error)")
                             }
-                        case .failure(let error):
-                            print("Error fetching conversation for group chat: \(error)")
-                        }
-                        
-                        // 无论成功或失败，都增加完成计数
-                        completedActivities += 1
-                        if completedActivities == totalActivities {
                             
-                            completion(.success(groupChats))  // 所有活动处理完成后调用 completion
+                            // 无论成功或失败，都增加完成计数
+                            completedConversations += 1
+                            if completedConversations == totalConversations {
+                                completion(.success(groupChats)) // 所有会话处理完成后调用 completion
+                            }
                         }
                     }
+                case .failure(let error):
+                    print("Error fetching conversations: \(error)")
+                    completion(.failure(error))
                 }
-            case .failure(let error):
-                print("Error fetching activities: \(error)")
-                completion(.failure(error))
             }
+        } catch {
+            print(error.localizedDescription)
         }
     }
+        
+//        let query = LCQuery(className: "Activity")
+//        query.whereKey("participantIds", .containedIn([currentUserId]))  // 确保查询包含当前用户
+//        query.find { result in
+//            switch result {
+//            case .success(let activities):
+//                var groupChats: [GroupChatList] = []
+//                let totalActivities = activities.count
+//                var completedActivities = 0
+//                
+//                // 如果没有活动，直接返回空数组
+//                if totalActivities == 0 {
+//                    completion(.success([]))
+//                    return
+//                }
+//                
+//                for activity in activities {
+//                    guard let groupChatId = activity["groupChatId"]?.stringValue else {
+//                        completedActivities += 1
+//                        if completedActivities == totalActivities {
+//                            completion(.success(groupChats))  // 所有活动处理完成后调用 completion
+//                        }
+//                        continue  // 如果没有 groupChatId 跳过当前活动
+//                    }
+//
+//                    // 查询 _Conversation 表来获取群聊信息
+//                    let conversationQuery = LCQuery(className: "_Conversation")
+//                    conversationQuery.whereKey("objectId", .equalTo(groupChatId))  // 查找指定的群聊
+//
+//                    conversationQuery.find { result in
+//                        switch result {
+//                        case .success(let conversations):
+//                            for conversation in conversations {
+//                                if let participantIds = conversation["m"]?.arrayValue as? [String] {
+//                                    // 获取活动名称
+//                                    let activityName = activity["activityName"]?.stringValue ?? "未知活动"
+//                                    let activityId = activity.objectId?.stringValue ?? "未知活动ID"
+//                                    let lmDate = conversation["lm"]?.dateValue ?? Date()
+//                                    // 创建 GroupChatList 对象
+//                                    let groupChat = GroupChatList(groupChatId: groupChatId, activityId: activityId, participantIds: participantIds, activityName: activityName, lmDate: lmDate)
+//                                    groupChats.append(groupChat)
+//                                }
+//                            }
+//                        case .failure(let error):
+//                            print("Error fetching conversation for group chat: \(error)")
+//                        }
+//                        
+//                        // 无论成功或失败，都增加完成计数
+//                        completedActivities += 1
+//                        if completedActivities == totalActivities {
+//                            
+//                            completion(.success(groupChats))  // 所有活动处理完成后调用 completion
+//                        }
+//                    }
+//                }
+//            case .failure(let error):
+//                print("Error fetching activities: \(error)")
+//                completion(.failure(error))
+//            }
+//        }
+//    }
 
     
     // 获取私信对方的信息（头像和用户名）
