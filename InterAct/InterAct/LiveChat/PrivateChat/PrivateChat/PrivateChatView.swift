@@ -9,6 +9,8 @@ import SwiftUI
 
 struct PrivateChatView: View {
     @StateObject private var viewModel: PrivateChatViewModel
+    @State var privateChat: PrivateChatList
+    
     @State private var messageText: String = ""
     @State private var selectedImage: UIImage?
     @State private var isAgreeable: Int = 0
@@ -16,26 +18,27 @@ struct PrivateChatView: View {
     @State private var activityName: String = ""
     
     
-    init(currentUserId: String, recipientUserId: String, sendParticipateIn: SendParticipateIn? = nil) {
-        _viewModel = StateObject(wrappedValue: PrivateChatViewModel(currentUserId: currentUserId, recipientUserId: recipientUserId, sendParticipateIn: sendParticipateIn ))
+    init(conversationID: String, privateChat: PrivateChatList, sendParticipateIn: SendParticipateIn? = nil) {
+        _viewModel = StateObject(wrappedValue: PrivateChatViewModel(privateChatId: conversationID, sendParticipateIn: sendParticipateIn))
+        self.privateChat = privateChat
     }
     
     var body: some View {
         VStack(spacing: 0) {
-            NavigationLink(destination: UserProfileView(userInfo: ParticipantInfo(id: viewModel.chat?.partnerId ?? "", username: viewModel.chat?.partnerUsername ?? "加载中...", avatarURL: URL(string: viewModel.chat?.partnerAvatarURL ?? ""), gender: viewModel.chat?.partnerGender ?? "加载中..." , exp: viewModel.chat?.partnerExp ?? 0))){
-                Text(viewModel.chat?.partnerUsername ?? "加载中...")
+            NavigationLink(destination: UserProfileView(userInfo: ParticipantInfo(id: viewModel.partner?.id ?? "", username: viewModel.partner?.username ?? "加载中...", avatarURL: viewModel.partner?.avatarURL, gender: viewModel.partner?.gender ?? "加载中..." , exp: viewModel.partner?.exp ?? 0))){
+                Text(viewModel.partner?.username ?? "加载中...")
                     .font(.title2)
                     .fontWeight(.bold)
                     .padding()
                     .foregroundStyle(.blue)
             }
-
+            
             // 消息列表
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(viewModel.messages) { message in
-                            PrivateMessageRowView(isAgreeable: $isAgreeable, activityId: $activityId, activityName: $activityName, message: message, activityDict: viewModel.activityDict ?? [:], isCurrentUser: message.senderId == viewModel.currentUserId, chat: viewModel.chat ?? PrivateChatList(partnerId: "加载中...", partnerUsername: "加载中...", partnerAvatarURL: "", partnerGender: "加载中...", partnerExp: 0, lmDate: Date()), currentUserId: viewModel.currentUserId)
+                            PrivateMessageRowView(isAgreeable: $isAgreeable, activityId: $activityId, activityName: $activityName, message: message, activityDict: viewModel.activityDict ?? [:], isCurrentUser: message.senderId == viewModel.currentUserId, partner: viewModel.partner ?? Partner(id: "", username: "加载中...", avatarURL: URL(filePath: ""), gender: "加载中...", exp: 0), currentUserId: viewModel.currentUserId ?? "")
                                 .id(message.id)  // 给每条消息设置唯一的 id
                         }
                     }
@@ -48,17 +51,17 @@ struct PrivateChatView: View {
                     }
                     viewModel.fetchMyFutureActivity()
                 }
-                .onChange(of: viewModel.messages) {
-                    // 当消息更新时滚动到底部
-                    if let lastMessage = viewModel.messages.last {
-                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                    }
-                }
+//                .onChange(of: viewModel.messages) {
+//                    // 当消息更新时滚动到底部
+//                    if let lastMessage = viewModel.messages.last {
+//                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
+//                    }
+//                }
                 .onChange(of: isAgreeable) {
                     switch isAgreeable {
                     case 1:
                         viewModel.sendMessage("好的，我同意你参加：“\(activityName)”")
-                        if let userId = viewModel.chat?.partnerId {
+                        if let userId = viewModel.partner?.id {
                             if !userId.isEmpty{
                                 // 调用静态方法 TODO: 可能需要改到VM中
                                 LeanCloudService.addUserToConversationAndActivity(userId: userId, activityId: activityId) { success, message in
@@ -110,11 +113,12 @@ struct PrivateChatView: View {
             .padding()
         }
         .onAppear {
-            viewModel.fetchUserInfo(for: viewModel.recipientUserId)
-            viewModel.openChatSession()
+            IMClientManager.shared.setIsInChatView("PrivateChatView") // 进入私信详情
+            viewModel.fetchConversation()
+            viewModel.fetchUserInfo(for: privateChat.partnerId)
         }
-        .onDisappear {
-            viewModel.closeConnection()
+        .onDisappear{
+            viewModel.readMessages()
         }
         .alert(isPresented: Binding<Bool>(
             get: { viewModel.onError != nil },

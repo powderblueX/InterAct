@@ -16,7 +16,7 @@ struct PrivateMessageRowView: View {
     @State var message: Message
     @State var activityDict: [String: [String]]
     let isCurrentUser: Bool
-    let chat: PrivateChatList
+    let partner: Partner
     let currentUserId: String
     
     var body: some View {
@@ -40,8 +40,8 @@ struct PrivateMessageRowView: View {
     private var partnerMessageView: some View {
         HStack(alignment: .top) {
             
-            NavigationLink(destination: UserProfileView(userInfo: ParticipantInfo(id: chat.partnerId, username: chat.partnerUsername, avatarURL: URL(string: chat.partnerAvatarURL), gender: chat.partnerGender , exp: chat.partnerExp))){
-                avatarImage(url: chat.partnerAvatarURL)
+            NavigationLink(destination: UserProfileView(userInfo: ParticipantInfo(id: partner.id, username: partner.username, avatarURL: partner.avatarURL, gender: partner.gender , exp: partner.exp))){
+                avatarImage(url: partner.avatarURL?.absoluteString ?? "")
             }
                         
             VStack(alignment: .leading) {
@@ -61,7 +61,7 @@ struct PrivateMessageRowView: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                             
-                            if !viewModel.checkIsParticipatory(activityDict: activityDict, chat: chat) {
+                            if !viewModel.checkIsParticipatory(activityDict: activityDict, partner: partner) {
                                 HStack {
                                     Button(action: {
                                         isAgreeable = 1

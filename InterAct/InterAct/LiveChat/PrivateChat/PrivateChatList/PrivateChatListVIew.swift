@@ -48,16 +48,20 @@ struct PrivateChatListView: View {
                                 .environment(\.locale, Locale(identifier: "zh_CN"))
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.leading, 10)  
+                        .padding(.leading, 10)
                         
-                        NavigationLink(destination: PrivateChatView(currentUserId: viewModel.currentUserId, recipientUserId: chat.partnerId)) {
+                        Text("\(String(describing: chat.unreadMessagesCount))条未读")
+                            .font(.subheadline)
+                            .foregroundStyle(chat.unreadMessagesCount == 0 ? .blue : .red)
+                        NavigationLink(destination: PrivateChatView(conversationID: chat.privateChatId, privateChat: chat)) {
                         }
-                        .frame(maxWidth: 30, alignment: .trailing)
+                        .frame(maxWidth: 20, alignment: .trailing)
                     }
                 }
             }
             .navigationTitle("私信列表")
             .onAppear {
+                IMClientManager.shared.setIsInChatView("PrivateChatListView") 
                 viewModel.fetchPrivateChats()  // 获取私聊列表
             }
             .alert(isPresented: $viewModel.isError) {

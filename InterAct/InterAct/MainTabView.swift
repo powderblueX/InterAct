@@ -57,8 +57,7 @@ struct MainTabView: View {
                 case .failure(let error):
                     print("failure:\(error)")
                 }
-            }
-            
+            } 
         }
     }
 }

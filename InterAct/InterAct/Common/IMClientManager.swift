@@ -13,6 +13,7 @@ class IMClientManager: NSObject, ObservableObject {
     var lastMessages: [String: IMTextMessage] = [:]
     private var client: IMClient?
     private var currentUserId: String?
+    private var isInChatView: String = "PrivateChatListView"
     @Published var conversations: [IMConversation] = []
 
     func initializeClient(completion: @escaping (Result<Void, Error>) -> Void) {
@@ -53,6 +54,10 @@ class IMClientManager: NSObject, ObservableObject {
     func getCurrentUserId() -> String? {
         return currentUserId
     }
+
+    func setIsInChatView(_ inChatView: String) {
+        self.isInChatView = inChatView
+    }
     
     func fetchAllConversations(completion: @escaping (Result<[IMConversation], Error>) -> Void) {
         guard let client = client else {
@@ -61,7 +66,7 @@ class IMClientManager: NSObject, ObservableObject {
         }
 
         let query = client.conversationQuery
-        query.limit = 100 // 设置最大查询条数，默认100
+        //query.limit = 100 // 设置最大查询条数，默认100
         do {
             try query.findConversations { result in
                 switch result {
@@ -81,6 +86,8 @@ class IMClientManager: NSObject, ObservableObject {
             print("Failed to fetch conversations: \(error)")
         }
     }
+    
+
 
 }
 
@@ -94,11 +101,21 @@ extension IMClientManager: IMClientDelegate {
                 if let textMessage = message as? IMTextMessage {
                     DispatchQueue.main.async {
                         self.lastMessages[conversation.ID] = textMessage
-                        NotificationCenter.default.post(name: .newMessageReceived, object: nil, userInfo: [
-                            "conversationID": conversation.ID,
-                            "message": textMessage
-                        ])
-                        NotificationCenter.default.post(name: .updateGroupChatList, object: nil)
+                        if self.isInChatView == "PrivateChatView" {
+                            NotificationCenter.default.post(name: .newMessagePrivateChatReceived, object: nil, userInfo: [
+                                "conversationID": conversation.ID,
+                                "message": textMessage
+                            ])
+                        } else if self.isInChatView == "GroupChatView" {
+                            NotificationCenter.default.post(name: .newMessagePrivateChatReceived, object: nil, userInfo: [
+                                "conversationID": conversation.ID,
+                                "message": textMessage
+                            ])
+                        } else if self.isInChatView == "GroupChatListView" {
+                            NotificationCenter.default.post(name: .updateGroupChatList, object: nil)
+                        } else {
+                            NotificationCenter.default.post(name: .updatePrivateChatList, object: nil)
+                        }
                     }
                 }
             default:
@@ -111,13 +128,25 @@ extension IMClientManager: IMClientDelegate {
     
     // 示例：处理一些客户端的委托方法
     func client(_ client: IMClient, event: IMClientEvent) {
-        print("Client event occurred: \(event)")
+        print("Received event: \(event)") // 打印事件类型
+        switch event {
+        case .sessionDidClose(let error):
+            print("Session closed with error: \(error.localizedDescription)")
+        case .sessionDidOpen:
+            print("Session opened successfully.")
+        case .sessionDidPause(let error):
+            print("Session paused with error: \(error.localizedDescription)")
+        case .sessionDidResume:
+            print("Session resumed successfully.")
+        }
     }
 }
 
 extension Notification.Name {
-    static let newMessageReceived = Notification.Name("newMessageReceived")
+    static let newMessageGroupChatReceived = Notification.Name("newMessageGroupChatReceived")
+    static let newMessagePrivateChatReceived = Notification.Name("newMessagePrivateChatReceived")
     static let updateGroupChatList = Notification.Name("updateGroupChatList")
+    static let updatePrivateChatList = Notification.Name("updatePrivateChatList")
 }
 
 

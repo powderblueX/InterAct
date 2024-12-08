@@ -12,8 +12,8 @@ struct GroupChatView: View {
     @StateObject private var viewModel: GroupChatViewModel  // 绑定视图模型
     @State var currentUser: LCUser = LCUser()
     @State var groupChat: GroupChatList
-    
     @State private var messageText: String = ""  // 用户输入的消息内容
+    
     init(conversationID: String, groupChat: GroupChatList) {
         _viewModel = StateObject(wrappedValue: GroupChatViewModel(conversationID: conversationID))
         self.groupChat = groupChat
@@ -31,14 +31,14 @@ struct GroupChatView: View {
                             }
                         }
                     }
-                    .onChange(of: viewModel.messages) {
-                        // 当消息更新时滚动到底部
-                        if let lastMessage = viewModel.messages.last {
-                            withAnimation {
-                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                            }
-                        }
-                    }
+//                    .onChange(of: viewModel.messages) {
+//                        // 当消息更新时滚动到底部
+//                        if let lastMessage = viewModel.messages.last {
+//                            withAnimation {
+//                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+//                            }
+//                        }
+//                    }
                 }
             }
             
@@ -64,17 +64,13 @@ struct GroupChatView: View {
             .padding()
         }
         .onAppear {
-//            viewModel.initializeIMClient(){ success in
-//                if success{
-//                    viewModel.joinGroupChat(with: groupChat)
-//                }
-//            }
+            IMClientManager.shared.setIsInChatView("GroupChatView") 
             viewModel.joinGroupChat(with: groupChat)
             viewModel.fetchAllparticipantsInfo(ParticipantIds: groupChat.participantIds)
         }
-//        .onDisappear{
-//            viewModel.closeConnection()
-//        }
+        .onDisappear{
+            viewModel.readMessages()
+        }
         .navigationBarTitle("\(groupChat.activityName)(\(groupChat.participantIds.count))", displayMode: .inline) // TODO: 推广
         .navigationBarItems(trailing: NavigationLink(destination: GroupChatManageView(groupChat: groupChat)) {
             Image(systemName: "gearshape")

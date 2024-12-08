@@ -13,23 +13,18 @@ import UIKit
 // TODO: 实现退出页面后断开连接
 
 class PrivateChatViewModel: ObservableObject {
-    @Published var chat: PrivateChatList? = PrivateChatList(partnerId: "", partnerUsername: "加载中...", partnerAvatarURL: "", partnerGender: "加载中...", partnerExp: 0, lmDate: Date())
     @Published var activityDict: [String: [String]]? = nil
-    
-    // 当前用户
-    let currentUserId: String
-    let recipientUserId: String
-    
+    @Published var partner: Partner? = nil
+    @Published var currentUserId: String?
+    @Published var privateChatId: String
     var sendParticipateIn: SendParticipateIn? = nil
-
-    // LeanCloud 客户端
-    private var client: IMClient?
-    private var conversation: IMConversation?
-
-    // 数据绑定：通过这些闭包通知 View 层更新
-    var onMessagesUpdated: (([Message]) -> Void)?
     @Published var onError: Error?
     
+    private var imClientManager = IMClientManager.shared
+    private var conversation: IMConversation?
+    
+    // 数据绑定：通过这些闭包通知 View 层更新
+    var onMessagesUpdated: (([Message]) -> Void)?
     // 当前消息列表
     @Published var messages: [Message] = [] {
         didSet {
@@ -38,79 +33,82 @@ class PrivateChatViewModel: ObservableObject {
     }
     
     // 初始化
-    init(currentUserId: String, recipientUserId: String, sendParticipateIn: SendParticipateIn? = nil) {
-        self.currentUserId = currentUserId
-        self.recipientUserId = recipientUserId
+    init(privateChatId: String, sendParticipateIn: SendParticipateIn? = nil) {
+        currentUserId = imClientManager.getCurrentUserId()
+        self.privateChatId = privateChatId
         self.sendParticipateIn = sendParticipateIn
+        subscribeToMessages()
+    }
+    private func subscribeToMessages() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewMessage(_:)), name: .newMessagePrivateChatReceived, object: nil)
+    }
+    @objc private func handleNewMessage(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let receivedConversationID = userInfo["conversationID"] as? String,
+              receivedConversationID == privateChatId, // 确保是当前会话的消息
+              let message = userInfo["message"] as? IMTextMessage else { return }
+        
+        // 如果消息是文本类型，则将其转换为自定义的 Message 模型
+        var newMessage = Message(
+            id: message.ID ?? UUID().uuidString,
+            senderId: message.fromClientID ?? "unknown",
+            content: message.text ?? "",
+            timestamp: message.sentDate ?? Date()
+        )
+        if newMessage.content.starts(with: "# wannaParticipateIn: ") {
+            let activityJSONString = String(newMessage.content.dropFirst("# wannaParticipateIn: ".count)) // 去掉前缀
+            if let activity = decodeJSONStringToActivity(jsonString: activityJSONString) {
+                newMessage.content = "我想参加您发起的活动：”"+activity.activityName+"“"
+                self.messages.append(newMessage)
+            }
+        } else {
+            // 将新消息添加到 messages 数组中
+            self.messages.append(newMessage)
+        }
+        // 如果你需要更新 UI 或进行其他操作，可以在这里调用相应方法
+        print("New message received: \(newMessage.content)")
+    }
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     func fetchMyFutureActivity() {
-        LeanCloudService.fetchFutureActivities(for: currentUserId) { result in
-            switch result {
-            case .success(let activityDict):
-                print("Fetched activities: \(activityDict)")
-                self.activityDict = activityDict
-                // activityDict 是一个字典，包含活动 ID 和参与者 ID 数组
-            case .failure(let error):
-                print("Failed to fetch activities: \(error.localizedDescription)")
+        if let currentUserId = self.currentUserId {
+            LeanCloudService.fetchFutureActivities(for: currentUserId) { result in
+                switch result {
+                case .success(let activityDict):
+                    print("Fetched activities: \(activityDict)")
+                    self.activityDict = activityDict
+                    // activityDict 是一个字典，包含活动 ID 和参与者 ID 数组
+                case .failure(let error):
+                    print("Failed to fetch activities: \(error.localizedDescription)")
+                }
             }
         }
     }
     
     func fetchUserInfo(for userId: String) {
-        // 调用 LeanCloudService 来获取用户信息（用户名和头像URL）
         LeanCloudService.fetchUserInfo(for: userId) { [weak self] username, avatarURL, gender, exp in
-            // 更新 PrivateChat 实例
-            if (self?.chat) != nil {
-                self?.chat = PrivateChatList(
-                    partnerId: userId,
-                    partnerUsername: username,
-                    partnerAvatarURL: avatarURL,
-                    partnerGender: gender,
-                    partnerExp: exp,
-                    lmDate: self?.messages.last?.timestamp ?? Date()
-                )
-            }
-        }
-    }
-    
-    // 打开聊天会话
-    func openChatSession() {
-        if client == nil {
-            do {
-                client = try IMClient(ID: currentUserId)
-                print("IMClient initialized successfully with ID: \(currentUserId)")  // 调试日志
-            } catch {
-                print("Failed to initalize IMClient: \(error.localizedDescription)")
-                return
-            }
-        }
-        print(chat ?? "123")
-        self.setupMessageReceiving()
-        
-        client?.open { [weak self] result in
-            switch result {
-            case .success:
-                print("IMClient opened successfully.")
-                self?.fetchOrCreateConversation()
-            case .failure(let error):
-                self?.onError = error
-            }
+            self?.partner = Partner(
+                id: userId,
+                username: username,
+                avatarURL: URL(string: avatarURL),
+                gender: gender,
+                exp: exp)
         }
     }
     
     // 查找或创建一个私信对话
-    private func fetchOrCreateConversation() {
+    func fetchConversation() {
         do {
-            try client?.createConversation(clientIDs: [recipientUserId], attributes: ["isPrivate": true] ,isUnique: true) { [weak self] result in
+            try imClientManager.getClient()?.conversationQuery.getConversation(by: privateChatId) { result in
                 switch result {
                 case .success(let conversation):
-                    self?.conversation = conversation
-                    print("Conversation created: \(conversation)")
-                    self?.loadMessageHistory()
-                    
+                    self.conversation = conversation
+                    self.privateChatId = conversation.ID
+                    self.loadMessageHistory()
                 case .failure(let error):
-                    self?.onError = error
+                    self.onError = error
                 }
             }
         } catch {
@@ -118,10 +116,8 @@ class PrivateChatViewModel: ObservableObject {
         }
     }
     
-    // 监听消息接收
-    private func setupMessageReceiving() {
-        print("Setting up delegate for message receiving.")  // 调试日志
-        client?.delegate = self
+    func readMessages(){
+        self.conversation?.read()
     }
     
     // 加载历史消息
@@ -134,6 +130,7 @@ class PrivateChatViewModel: ObservableObject {
             }
         }
         do {
+            readMessages()
             try conversation?.queryMessage{ [weak self] result in
                 switch result {
                 case .success(let messages):
@@ -206,24 +203,6 @@ class PrivateChatViewModel: ObservableObject {
 
     }
     
-    // 关闭 LeanCloud 客户端连接
-    func closeConnection() {
-        if let client = self.client {
-            print("Attempting to close connection...")
-            client.close { result in
-                switch result {
-                case .success:
-                    print("IMClient connection closed successfully.")
-                case .failure(let error):
-                    print("Failed to close IMClient connection: \(error.localizedDescription)")
-                }
-            }
-        } else {
-            print("IMClient is nil, cannot close connection.")
-        }
-        self.client = nil
-    }
-    
     // 编码Activity为JSON字符串
     func encodeActivityToJSONString(sendParticipateIn: SendParticipateIn) -> String? {
         let encoder = JSONEncoder()
@@ -254,57 +233,4 @@ class PrivateChatViewModel: ObservableObject {
         return nil
     }
 }
-
-
-extension PrivateChatViewModel: IMClientDelegate {
-    func client(_ client: LeanCloud.IMClient, conversation: LeanCloud.IMConversation, event: LeanCloud.IMConversationEvent) {
-        switch event {
-        case .message(let messageEvent):
-            switch messageEvent {
-            case .received(let message):
-                // 处理接收到的消息
-                if let textMessage = message as? IMTextMessage {
-                    // 如果消息是文本类型，则将其转换为自定义的 Message 模型
-                    var newMessage = Message(
-                        id: message.ID ?? UUID().uuidString,
-                        senderId: textMessage.fromClientID ?? "unknown",
-                        content: textMessage.text ?? "",
-                        timestamp: textMessage.sentDate ?? Date()
-                    )
-                    if newMessage.content.starts(with: "# wannaParticipateIn: ") {
-                        let activityJSONString = String(newMessage.content.dropFirst("# wannaParticipateIn: ".count)) // 去掉前缀
-                        if let activity = decodeJSONStringToActivity(jsonString: activityJSONString) {
-                            newMessage.content = "我想参加您发起的活动：”"+activity.activityName+"“"
-                            self.messages.append(newMessage)
-                        }
-                    } else {
-                        // 将新消息添加到 messages 数组中
-                        self.messages.append(newMessage)
-                    }
-                    // 如果你需要更新 UI 或进行其他操作，可以在这里调用相应方法
-                    print("New message received: \(newMessage.content)")
-                }
-            default:
-                break
-            }
-        default:
-            break
-        }
-    }
-    
-    func client(_ client: IMClient, event: IMClientEvent) {
-        print("Received event: \(event)") // 打印事件类型
-        switch event {
-        case .sessionDidClose(let error):
-            print("Session closed with error: \(error.localizedDescription)")
-        case .sessionDidOpen:
-            print("Session opened successfully.")
-        case .sessionDidPause(let error):
-            print("Session paused with error: \(error.localizedDescription)")
-        case .sessionDidResume:
-            print("Session resumed successfully.")
-        }
-    }  
-}
-
 

@@ -134,29 +134,29 @@ struct ActivityDetailView: View {
                                     .background(.blue)
                             } else {
                                 VStack{
-                                    NavigationLink(destination: PrivateChatView(currentUserId: viewModel.currentUserId, recipientUserId: viewModel.activity?.hostId ?? "")) {
-                                    
-                                        Text("私信发起人")
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .padding()
-                                            .frame(maxWidth: 150)
-                                            .background(.blue)
-                                            .cornerRadius(10)
-                                    }
-                                    .disabled(viewModel.currentUserId.isEmpty || ((viewModel.activity?.hostId) == nil))
+//                                    NavigationLink(destination: PrivateChatView(c: viewModel.currentUserId, recipientUserId: viewModel.activity?.hostId ?? "", privateChatId: "")) {
+//
+//                                        Text("私信发起人")
+//                                            .font(.system(size: 20, weight: .bold))
+//                                            .foregroundColor(.white)
+//                                            .padding()
+//                                            .frame(maxWidth: 150)
+//                                            .background(.blue)
+//                                            .cornerRadius(10)
+//                                    }
+//                                    .disabled(viewModel.currentUserId.isEmpty || ((viewModel.activity?.hostId) == nil))
                                 }
                                 VStack{
-                                    NavigationLink(destination: PrivateChatView(currentUserId: viewModel.currentUserId, recipientUserId: viewModel.activity?.hostId ?? "", sendParticipateIn: SendParticipateIn(activityId: activityId, activityName: viewModel.activity?.activityName ?? "加载中..."))) {
-                                        Text("我要参加")
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .padding()
-                                            .frame(maxWidth: 150)
-                                            .background(viewModel.checkParticipantButtonDisabled() ? .gray : .blue)
-                                            .cornerRadius(10)
-                                    }
-                                    .disabled(viewModel.checkParticipantButtonDisabled())
+//                                    NavigationLink(destination: PrivateChatView(currentUserId: viewModel.currentUserId, recipientUserId: viewModel.activity?.hostId ?? "", privateChatId: "", sendParticipateIn: SendParticipateIn(activityId: activityId, activityName: viewModel.activity?.activityName ?? "加载中..."))) {
+//                                        Text("我要参加")
+//                                            .font(.system(size: 20, weight: .bold))
+//                                            .foregroundColor(.white)
+//                                            .padding()
+//                                            .frame(maxWidth: 150)
+//                                            .background(viewModel.checkParticipantButtonDisabled() ? .gray : .blue)
+//                                            .cornerRadius(10)
+//                                    }
+//                                    .disabled(viewModel.checkParticipantButtonDisabled())
                                 }
                             }
                         }

@@ -46,6 +46,7 @@ struct GroupChatListView: View {
             }
             .navigationTitle("群聊列表")
             .onAppear {
+                IMClientManager.shared.setIsInChatView("GroupChatListView") 
                 viewModel.fetchGroupChats()
             }
             .alert(isPresented: $viewModel.isError) {

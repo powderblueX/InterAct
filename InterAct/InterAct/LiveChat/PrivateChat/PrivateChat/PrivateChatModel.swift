@@ -16,6 +16,13 @@ struct Message: Identifiable, Hashable, Equatable {
     var timestamp: Date
 }
 
+struct Partner {
+    let id: String
+    var username: String
+    var avatarURL: URL?
+    var gender: String
+    var exp: Int
+}
 
 struct User: Identifiable{
     let id: String          // 用户唯一标识符

@@ -13,6 +13,6 @@ struct GroupChatList{
     let activityId: String
     let participantIds: [String]
     let activityName: String
-    var unreadMessagesCount: Int
+    let unreadMessagesCount: Int
     let lmDate: Date   
 }
