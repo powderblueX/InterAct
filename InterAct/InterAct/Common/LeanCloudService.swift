@@ -179,6 +179,7 @@ struct LeanCloudService {
         UserDefaults.standard.removeObject(forKey: "birthday") // 移除用户名
         UserDefaults.standard.removeObject(forKey: "gender") // 移除用户名
         KeychainHelper.deletePassword() // 移除密码
+        IMClientManager.shared.closeClient()
     }
     
     

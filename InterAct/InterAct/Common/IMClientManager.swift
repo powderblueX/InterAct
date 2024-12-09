@@ -15,7 +15,7 @@ class IMClientManager: NSObject, ObservableObject {
     private var currentUserId: String?
     private var isInChatView: String = "PrivateChatListView"
     @Published var conversations: [IMConversation] = []
-
+    
     func initializeClient(completion: @escaping (Result<Void, Error>) -> Void) {
         guard client == nil else {
             completion(.success(())) // 如果已经初始化，则直接返回成功
@@ -26,6 +26,7 @@ class IMClientManager: NSObject, ObservableObject {
             return
         }
         currentUserId = userId
+        print((currentUserId ?? "1222222")+"22222222222")
         
         do {
             client = try IMClient(ID: userId)
@@ -46,7 +47,7 @@ class IMClientManager: NSObject, ObservableObject {
             completion(.failure(error))
         }
     }
-
+    
     func getClient() -> IMClient? {
         return client
     }
@@ -54,7 +55,7 @@ class IMClientManager: NSObject, ObservableObject {
     func getCurrentUserId() -> String? {
         return currentUserId
     }
-
+    
     func setIsInChatView(_ inChatView: String) {
         self.isInChatView = inChatView
     }
@@ -64,7 +65,7 @@ class IMClientManager: NSObject, ObservableObject {
             completion(.failure(NSError(domain: "IMClient is not initialized", code: -1, userInfo: nil)))
             return
         }
-
+        
         let query = client.conversationQuery
         //query.limit = 100 // 设置最大查询条数，默认100
         do {
@@ -87,8 +88,23 @@ class IMClientManager: NSObject, ObservableObject {
         }
     }
     
-
-
+    func closeClient(completion: (() -> Void)? = nil) {
+        guard let client = client else {
+            completion?() // 如果客户端已关闭或不存在，则直接调用回调
+            return
+        }
+        
+        client.close { result in
+            switch result {
+            case .success:
+                print("IMClient closed successfully.")
+            case .failure(let error):
+                print("Failed to close IMClient: \(error.localizedDescription)")
+            }
+            self.client = nil
+            completion?()
+        }
+    }
 }
 
 extension IMClientManager: IMClientDelegate {
@@ -150,22 +166,5 @@ extension Notification.Name {
 }
 
 
-//    func closeClient(completion: (() -> Void)? = nil) {
-//        guard let client = client else {
-//            completion?() // 如果客户端已关闭或不存在，则直接调用回调
-//            return
-//        }
-//
-//        client.close { result in
-//            switch result {
-//            case .success:
-//                self.isClientOpen = false
-//                print("IMClient closed successfully.")
-//            case .failure(let error):
-//                print("Failed to close IMClient: \(error.localizedDescription)")
-//            }
-//            self.client = nil
-//            completion?()
-//        }
-//    }
+
     
