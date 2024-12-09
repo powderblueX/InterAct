@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import LeanCloud
 
 struct PrivateChatView: View {
     @StateObject private var viewModel: PrivateChatViewModel
@@ -16,7 +17,6 @@ struct PrivateChatView: View {
     @State private var isAgreeable: Int = 0
     @State private var activityId: String = ""
     @State private var activityName: String = ""
-    
     
     init(conversationID: String, privateChat: PrivateChatList, sendParticipateIn: SendParticipateIn? = nil) {
         _viewModel = StateObject(wrappedValue: PrivateChatViewModel(privateChatId: conversationID, sendParticipateIn: sendParticipateIn))
@@ -36,27 +36,29 @@ struct PrivateChatView: View {
             // 消息列表
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(spacing: 0) {
+                    LazyVStack(spacing: 0) {
+                        // 顶部加载触发器
+                        if viewModel.hasMoreMessages {
+                            ProgressView("加载中...")
+                                .onAppear {
+                                    viewModel.loadMoreMessages() // 滚动到顶部时触发加载更多
+                                }
+                        }
+
                         ForEach(viewModel.messages) { message in
                             PrivateMessageRowView(isAgreeable: $isAgreeable, activityId: $activityId, activityName: $activityName, message: message, activityDict: viewModel.activityDict ?? [:], isCurrentUser: message.senderId == viewModel.currentUserId, partner: viewModel.partner ?? Partner(id: "", username: "加载中...", avatarURL: URL(filePath: ""), gender: "加载中...", exp: 0), currentUserId: viewModel.currentUserId ?? "")
-                                .id(message.id)  // 给每条消息设置唯一的 id
+                                .id("\(message.senderId)_\(message.timestamp.timeIntervalSince1970)")
                         }
                     }
                 }
                 .onAppear {
-                    DispatchQueue.main.async {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         if let lastMessage = viewModel.messages.last {
                             proxy.scrollTo(lastMessage.id, anchor: .bottom)
                         }
                     }
                     viewModel.fetchMyFutureActivity()
                 }
-//                .onChange(of: viewModel.messages) {
-//                    // 当消息更新时滚动到底部
-//                    if let lastMessage = viewModel.messages.last {
-//                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
-//                    }
-//                }
                 .onChange(of: isAgreeable) {
                     switch isAgreeable {
                     case 1:
@@ -114,7 +116,11 @@ struct PrivateChatView: View {
         }
         .onAppear {
             IMClientManager.shared.setIsInChatView("PrivateChatView") // 进入私信详情
-            viewModel.fetchConversation()
+            if privateChat.privateChatId.isEmpty {
+                viewModel.createConversation(to: privateChat.partnerId)
+            } else {
+                viewModel.fetchConversation()
+            }
             viewModel.fetchUserInfo(for: privateChat.partnerId)
         }
         .onDisappear{

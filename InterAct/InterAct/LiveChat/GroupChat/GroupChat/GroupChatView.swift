@@ -25,20 +25,12 @@ struct GroupChatView: View {
                 ScrollView {
                     messageContent
                     .onAppear {
-                        DispatchQueue.main.async {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                             if let lastMessage = viewModel.messages.last {
                                 proxy.scrollTo(lastMessage.id, anchor: .bottom)
                             }
                         }
                     }
-//                    .onChange(of: viewModel.messages) {
-//                        // 当消息更新时滚动到底部
-//                        if let lastMessage = viewModel.messages.last {
-//                            withAnimation {
-//                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
-//                            }
-//                        }
-//                    }
                 }
             }
             
@@ -82,7 +74,14 @@ struct GroupChatView: View {
     }
     
     private var messageContent: some View {
-        VStack(spacing: 0) {
+        LazyVStack(spacing: 0) {
+            // 顶部加载触发器
+            if viewModel.hasMoreMessages {
+                ProgressView("加载中...")
+                    .onAppear {
+                        viewModel.loadMoreMessages() // 滚动到顶部时触发加载更多
+                    }
+            }
             ForEach(viewModel.messages) { message in
                 let matchingParticipant = viewModel.participantsInfo?.first(where: { $0.id == message.senderId })
                 GroupMessageRowView(message: message, isCurrentUser: message.senderId == viewModel.currentUserId, senderInfo: matchingParticipant ?? ParticipantInfo(id: "加载中...", username: "加载中...", avatarURL: URL(filePath: "加载中..."), gender: "加载中...", exp: 0))

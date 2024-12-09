@@ -9,7 +9,6 @@ import Foundation
 import LeanCloud
 
 class GroupChatViewModel: ObservableObject {
-    @Published var isLoading: Bool = false
     @Published var groupChatId: String
     @Published var currentUserId: String?
     @Published var participants: [LCUser] = [] // 存储群聊参与者
@@ -17,6 +16,10 @@ class GroupChatViewModel: ObservableObject {
     @Published var onError: Error?
     @Published var showAlert: Bool = false
     @Published var alertMessage: String = ""
+    
+    @Published var isLoading: Bool = false
+    @Published var hasMoreMessages: Bool = true
+    private var lastMessage: IMMessage? // 记录最后一条消息，用于分页加载
     private var conversation: IMConversation?
     private var imClientManager = IMClientManager.shared
     @Published var participantsInfo: [ParticipantInfo]? = nil
@@ -89,7 +92,7 @@ class GroupChatViewModel: ObservableObject {
                 case .success(let createdConversation):
                     self.conversation = createdConversation
                     print("Successfully created conversation \(String(describing: self.conversation))")
-                    self.loadMessageHistory()
+                    self.loadRecentMessages()
                 case .failure(let error):
                     print("Failed to create conversation: \(error)")
                 }
@@ -103,37 +106,81 @@ class GroupChatViewModel: ObservableObject {
         self.conversation?.read()
     }
     
-    // 加载历史消息
-    private func loadMessageHistory() {
+    // 加载最新的消息（首次或刷新）
+    func loadRecentMessages() {
+        guard let conversation = conversation else { return }
+        isLoading = true
+        
         do {
-            if let conversation = conversation {
-                print("Conversation ID: \(conversation.ID)")
-                print("Conversation Members: \(String(describing: conversation.members))")
-            } else {
-                print("Conversation is nil")
-            }
             readMessages()
-            try conversation?.queryMessage{ [weak self] result in
-                switch result {
-                case .success(let messages):
-                    self?.messages = messages.compactMap { message in
-                        if let textMessage = message as? IMTextMessage {
-                            return Message(
-                                id: message.ID ?? UUID().uuidString,
-                                senderId: textMessage.fromClientID ?? "unknown",
-                                content: textMessage.text ?? "",
-                                timestamp: textMessage.sentDate ?? Date()
-                            )
-                        }
-                        return nil
+            try conversation.queryMessage(limit: 20) { [weak self] result in
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                    switch result {
+                    case .success(let messages):
+                        self?.messages = messages.compactMap { self?.convertToMessage($0) }
+                        self?.lastMessage = messages.first
+                        self?.hasMoreMessages = messages.count == 20 // 如果少于 20 条，说明没有更多消息
+                    case .failure(let error):
+                        print("加载消息失败：\(error)")
                     }
-                case .failure(let error):
-                    self?.onError = error
                 }
             }
-        } catch let error {
-            print("Error caught in catch block: \(error.localizedDescription)")
+        } catch {
+            print("加载消息异常：\(error.localizedDescription)")
+            isLoading = false
         }
+    }
+    
+    // 分页加载历史消息
+    func loadMoreMessages() {
+        guard let conversation = conversation, hasMoreMessages, !isLoading else { return }
+        isLoading = true
+        
+        do {
+            readMessages()
+            let startPoint: IMConversation.MessageQueryEndpoint?
+            if let lastMessage = lastMessage {
+                startPoint = IMConversation.MessageQueryEndpoint(
+                    messageID: lastMessage.ID,
+                    sentTimestamp: lastMessage.sentDate?.timeIntervalSince1970 != nil ? Int64(lastMessage.sentDate!.timeIntervalSince1970 * 1000) : nil,
+                    isClosed: false
+                )
+            } else {
+                startPoint = nil
+            }
+            
+            try conversation.queryMessage(start: startPoint, limit: 20) { [weak self] result in
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                    switch result {
+                    case .success(let messages):
+                        let newMessages = messages.compactMap { self?.convertToMessage($0) }
+                        self?.messages.insert(contentsOf: newMessages, at: 0)
+                        self?.lastMessage = messages.first
+                        self?.hasMoreMessages = messages.count == 20
+                    case .failure(let error):
+                        print("加载历史消息失败：\(error)")
+                    }
+                }
+            }
+        } catch {
+            print("加载历史消息异常：\(error.localizedDescription)")
+            isLoading = false
+        }
+    }
+    
+    // 消息模型转换
+    private func convertToMessage(_ message: IMMessage) -> Message? {
+        if let textMessage = message as? IMTextMessage {
+            return Message(
+                id: message.ID ?? UUID().uuidString,
+                senderId: textMessage.fromClientID ?? "unknown",
+                content: textMessage.text ?? "",
+                timestamp: textMessage.sentDate ?? Date()
+            )
+        }
+        return nil
     }
 
     func sendMessage(_ text: String) {
@@ -162,3 +209,37 @@ class GroupChatViewModel: ObservableObject {
         }
     }
 }
+
+
+//// 加载历史消息
+//private func loadMessageHistory() {
+//    do {
+//        if let conversation = conversation {
+//            print("Conversation ID: \(conversation.ID)")
+//            print("Conversation Members: \(String(describing: conversation.members))")
+//        } else {
+//            print("Conversation is nil")
+//        }
+//        readMessages()
+//        try conversation?.queryMessage{ [weak self] result in
+//            switch result {
+//            case .success(let messages):
+//                self?.messages = messages.compactMap { message in
+//                    if let textMessage = message as? IMTextMessage {
+//                        return Message(
+//                            id: message.ID ?? UUID().uuidString,
+//                            senderId: textMessage.fromClientID ?? "unknown",
+//                            content: textMessage.text ?? "",
+//                            timestamp: textMessage.sentDate ?? Date()
+//                        )
+//                    }
+//                    return nil
+//                }
+//            case .failure(let error):
+//                self?.onError = error
+//            }
+//        }
+//    } catch let error {
+//        print("Error caught in catch block: \(error.localizedDescription)")
+//    }
+//}

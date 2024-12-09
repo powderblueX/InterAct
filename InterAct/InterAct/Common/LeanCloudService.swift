@@ -171,6 +171,7 @@ struct LeanCloudService {
     // 用户登出
     static func logout() {
         LCUser.logOut() // 退出当前用户
+        UserDefaults.standard.removeObject(forKey: "objectId") // 移除用户id
         UserDefaults.standard.removeObject(forKey: "username") // 移除用户名
         UserDefaults.standard.removeObject(forKey: "avatarURL") // 移除用户名
         UserDefaults.standard.removeObject(forKey: "email") // 移除用户名
