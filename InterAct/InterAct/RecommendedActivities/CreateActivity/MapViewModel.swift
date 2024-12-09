@@ -68,8 +68,6 @@ class MapViewModel: ObservableObject {
                 print("没有找到相关位置")
             }
         }
-        
-        
     }
     
     // 通过坐标获取地址的函数（反向地理编码）

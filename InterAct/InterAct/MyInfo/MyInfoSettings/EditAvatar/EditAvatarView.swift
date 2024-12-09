@@ -54,7 +54,7 @@ struct EditAvatarView: View {
             }
             .fullScreenCover(isPresented: $viewModel.isImageEditingPresented) {
                 if viewModel.selectedImage != nil {
-                    CropImageView(image: $viewModel.selectedImage) { croppedImage in
+                    CropAvatarView(image: $viewModel.selectedImage) { croppedImage in
                         viewModel.selectedImage = croppedImage
                         viewModel.uploadImageToLeanCloud()
                     }

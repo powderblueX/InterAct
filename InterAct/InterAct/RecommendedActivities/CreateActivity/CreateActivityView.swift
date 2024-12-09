@@ -76,9 +76,19 @@ struct CreateActivityView: View {
                 
                 // 上传照片
                 Section(header: Text("上传一张照片（可选）")) {
-                    Button("选择照片") {
-                        // 这里可以通过ImagePicker选择照片
-                        viewModel.isImagePickerPresented = true // 这里模拟上传照片
+                    HStack {
+                        Button("选择照片") {
+                            // 这里可以通过ImagePicker选择照片
+                            viewModel.isImagePickerPresented = true // 这里模拟上传照片
+                        }
+                        
+                        Button(action: {
+                            viewModel.selectedImage = nil
+                        }) {
+                            Image(systemName: "multiply.circle.fill")
+                                .foregroundStyle((viewModel.selectedImage != nil) ? .red : .gray)
+                        }
+                        .padding()
                     }
                     Image(uiImage: viewModel.selectedImage ?? UIImage())
                         .resizable()

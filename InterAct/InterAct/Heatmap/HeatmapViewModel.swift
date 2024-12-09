@@ -13,17 +13,21 @@ import LeanCloud
 import SwiftUI
 
 class HeatmapViewModel: ObservableObject {
-    
+    @Published var selectedLocation: CLLocationCoordinate2D? = CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555)
+    @Published var locationName: String = ""
+    @Published var searchText: String = ""
     @Published var position: MapCameraPosition = .automatic
     @Published var region: MKCoordinateRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555),
         span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
     )
+    
     @Published var activities: [HeatmapActivity] = []      // 单个活动数据
     @Published var regions: [HeatmapRegion] = []
     @Published var selectedRegion: HeatmapRegion? = nil // 存储当前选中的热力区域
     @Published var showDetails: Bool = false
     @Published private var zoomScale: Double = 1.0 // 记录地图缩放比例
+    @Published var errorSearchMessage: String? = nil
     
     func loadHeatmapActivities() {
         LeanCloudService.fetchActivitiesFromDB { [weak self] activities, error in
@@ -35,6 +39,15 @@ class HeatmapViewModel: ObservableObject {
             } else if let error = error {
                 print("Error fetching activities: \(error)")
             }
+        }
+    }
+    
+    // 设置地图位置到选中的点
+    func setCameraToSelectedLocation() {
+        if let selectedLocation = selectedLocation {
+            position = .camera(
+                MapCamera(centerCoordinate: selectedLocation, distance: 5000) // 这里的距离可以调整
+            )
         }
     }
     
@@ -63,9 +76,57 @@ class HeatmapViewModel: ObservableObject {
         regions = Array(regionDict.values)
     }
     
+    // 搜索地址的函数
+    func searchAddress(searchText: String) {
+        let geocoder = CLGeocoder()
+        
+        geocoder.geocodeAddressString(searchText) { [weak self] (placemarks, error) in
+            guard let self = self else { return }
+            
+            if let error = error {
+                if let geocodeError = error as? CLError {
+                    switch geocodeError.code {
+                    case .locationUnknown:
+                        errorSearchMessage = "定位信息未知"
+                        print("定位信息未知")
+                    case .denied:
+                        errorSearchMessage = "定位服务权限被拒绝"
+                        print("定位服务权限被拒绝")
+                    case .network:
+                        errorSearchMessage = "网络错误"
+                        print("网络错误")
+                    default:
+                        errorSearchMessage = "其他错误: \(geocodeError.localizedDescription)"
+                        print("其他错误: \(geocodeError.localizedDescription)")
+                    }
+                } else {
+                    errorSearchMessage = "Geocoding failed: \(error.localizedDescription)"
+                    print("Geocoding failed: \(error.localizedDescription)")
+                }
+                return
+            }
+            
+            if let placemark = placemarks?.first, let location = placemark.location {
+                // 更新地图位置和显示的地名
+                self.selectedLocation = location.coordinate
+                self.locationName = placemark.name ?? "未知位置"
+                
+                // 更新地图的显示区域
+                region.center = location.coordinate
+                region.span = MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
+                position = .automatic
+                
+                print("找到位置: \(placemark.name ?? "未知位置")")
+            } else {
+                errorSearchMessage = "没有找到相关位置"
+                print("没有找到相关位置")
+            }
+        }
+    }
+    
     // 热力图颜色、透明度
     func getHeatmapColor(for region: HeatmapRegion) -> Color {
-        let density = Double(region.activityCount) / 4.0  // 假设最大活动数为 10
+        let density = Double(region.activityCount) / 5.0  // 假设最大活动数为 10
         // 计算每种颜色的分量
         let red: Double
         let green: Double
@@ -84,7 +145,7 @@ class HeatmapViewModel: ObservableObject {
             blue = 0.0           // 蓝色为 0
         }
         // 透明度随着活动数增加而增大
-        let opacity = min(0.3 + density * 0.4, 5.0) // 最小透明度0.6，最大透明度1.0
+        let opacity = min(0.3 + density * 0.4, 0.8) // 最小透明度0.6，最大透明度0.8
         return Color(red: red, green: green, blue: blue) // 蓝色到红色渐变
             .opacity(opacity)
     }

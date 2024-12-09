@@ -647,7 +647,7 @@ struct LeanCloudService {
                     if let fileUrl = file.url?.value {
                         let secureURL = fileUrl.replacingOccurrences(of: "http://", with: "https://")
                         activity["image"] = LCString(secureURL) // 保存文件 URL 到 LeanCloud
-                        saveActivity(activity: activity, completion: completion)  // 保存活动信息
+                        saveActivity(activity: activity, hostId: hostId, completion: completion)  // 保存活动信息
                     } else {
                         completion(false, "图片上传失败，无法获取文件 URL")
                     }
@@ -657,20 +657,35 @@ struct LeanCloudService {
             }
         } else {
             // 如果没有选择图片，直接保存活动信息
-            saveActivity(activity: activity, completion: completion)
+            saveActivity(activity: activity, hostId: hostId, completion: completion)
         }
     }
-    private static func saveActivity(activity: LCObject, completion: @escaping (Bool, String) -> Void) {
-        activity.save { result in
-            // 保存活动信息到 LeanCloud
-            activity.save { result in
+    private static func saveActivity(activity: LCObject, hostId: String, completion: @escaping (Bool, String) -> Void) {
+        let memberIds: Set<String> = Set([hostId])
+        do {
+            try IMClientManager.shared.getClient()?.createConversation(clientIDs: memberIds, attributes: ["isPrivate": false], isUnique: true) { result in
                 switch result {
-                case .success:
-                    completion(true, "活动发布成功！")
+                case .success(let conversation):
+                    print("Successfully created conversation!")
+                    activity["groupChatId"] = LCString(conversation.ID)
+                    // 群聊创建成功，继续保存活动信息
+                    activity.save { result in
+                        switch result {
+                        case .success:
+                            completion(true, "活动发布成功！活动群聊可在群聊列表中查看！")
+                        case .failure(let error):
+                            completion(false, "发布失败: \(error.localizedDescription)")
+                        }
+                    }
                 case .failure(let error):
-                    completion(false, "发布失败: \(error.localizedDescription)")
+                    print("Failed to create conversation: \(error.localizedDescription)")
+                    completion(false, "群聊创建失败，活动无法发布！")
                 }
             }
+        } catch {
+            // 处理异常
+            print("Error while trying to create conversation: \(error.localizedDescription)")
+            completion(false, "群聊创建失败，活动无法发布！")
         }
     }
     

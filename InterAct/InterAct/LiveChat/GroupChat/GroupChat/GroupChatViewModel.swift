@@ -209,37 +209,3 @@ class GroupChatViewModel: ObservableObject {
         }
     }
 }
-
-
-//// 加载历史消息
-//private func loadMessageHistory() {
-//    do {
-//        if let conversation = conversation {
-//            print("Conversation ID: \(conversation.ID)")
-//            print("Conversation Members: \(String(describing: conversation.members))")
-//        } else {
-//            print("Conversation is nil")
-//        }
-//        readMessages()
-//        try conversation?.queryMessage{ [weak self] result in
-//            switch result {
-//            case .success(let messages):
-//                self?.messages = messages.compactMap { message in
-//                    if let textMessage = message as? IMTextMessage {
-//                        return Message(
-//                            id: message.ID ?? UUID().uuidString,
-//                            senderId: textMessage.fromClientID ?? "unknown",
-//                            content: textMessage.text ?? "",
-//                            timestamp: textMessage.sentDate ?? Date()
-//                        )
-//                    }
-//                    return nil
-//                }
-//            case .failure(let error):
-//                self?.onError = error
-//            }
-//        }
-//    } catch let error {
-//        print("Error caught in catch block: \(error.localizedDescription)")
-//    }
-//}

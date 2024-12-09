@@ -28,12 +28,24 @@ struct MapView: View {
         ScrollView{
             VStack {
                 // 地址搜索框
-                TextField("输入地址或地点名称", text: $viewModel.searchText, onCommit: {
-                    viewModel.searchAddress(searchText: viewModel.searchText) // 按回车后进行搜索
-                })
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                HStack{
+                    TextField("输入地址或地点名称", text: $viewModel.searchText)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.trailing, 8)
+                    
+                    Button(action: {
+                        viewModel.searchAddress(searchText: viewModel.searchText)
+                    }) {
+                        Image(systemName: "magnifyingglass")
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                    }
+                }
                 .padding()
-
+                
                 GeometryReader { geometry in
                     Map(position: $viewModel.position){
                         Marker("活动位置", coordinate: selectedLocation ?? CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555))
@@ -85,17 +97,23 @@ struct MapView: View {
         }
         .overlay(
             Group {
-                if let errorSearchMessage = viewModel.errorSearchMessage {
-                    Text(errorSearchMessage)
+                if viewModel.errorSearchMessage != nil {
+                    Text("搜索失败🥺🥺🥺")
                         .padding()
                         .background(Color.black.opacity(0.7))
                         .foregroundColor(.white)
                         .clipShape(Capsule())
                         .transition(.opacity)
-                        .animation(.easeInOut, value: viewModel.errorSearchMessage)
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                withAnimation {
+                                    viewModel.errorSearchMessage = nil
+                                }
+                            }
+                        }
                 }
             },
-            alignment: .top
+            alignment: .bottom
         )
         .onChange(of: locationManager.authorizationStatus) { oldValue, status in
             if status == .authorizedWhenInUse || status == .authorizedAlways {
@@ -117,8 +135,6 @@ struct MapView: View {
             self.locationName = newLocationName
         }
     }
-    
-
 }
 
 // 扩展 Optional<CLLocationCoordinate2D>，使其遵守 Equatable 协议

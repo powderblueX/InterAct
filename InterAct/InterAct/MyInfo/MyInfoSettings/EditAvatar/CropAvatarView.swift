@@ -1,5 +1,5 @@
 //
-//  CropImageView.swift
+//  CropAvatarView.swift
 //  EcoStep
 //
 //  Created by admin on 2024/11/24.
@@ -8,7 +8,7 @@
 import SwiftUI
 import CropViewController
 
-struct CropImageView: UIViewControllerRepresentable {
+struct CropAvatarView: UIViewControllerRepresentable {
     @Binding var image: UIImage?
     @Environment(\.presentationMode) var presentationMode
     var onCropped: (UIImage) -> Void
@@ -26,9 +26,9 @@ struct CropImageView: UIViewControllerRepresentable {
     }
 
     class Coordinator: NSObject, CropViewControllerDelegate {
-        let parent: CropImageView
+        let parent: CropAvatarView
 
-        init(_ parent: CropImageView) {
+        init(_ parent: CropAvatarView) {
             self.parent = parent
         }
 
