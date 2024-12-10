@@ -62,8 +62,8 @@ struct GroupMessageRowView: View {
         return VStack{
             Text(message.content)
                 .padding(5)
-                .background(isCurrentUser ? Color.blue : Color.gray.opacity(0.2))
-                .foregroundColor(isCurrentUser ? .white : .black)
+                .background(isCurrentUser ? .blue : .primary.opacity(0.2))
+                .foregroundColor(isCurrentUser ? .white : .primary)
                 .cornerRadius(8)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)

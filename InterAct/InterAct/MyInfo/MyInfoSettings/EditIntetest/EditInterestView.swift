@@ -25,8 +25,8 @@ struct EditInteresView: View {
                             .font(.system(size: 14))
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(viewModel.selectedInterests.contains(tag) ? Color.blue.opacity(0.8) : Color.gray.opacity(0.2))
-                            .foregroundColor(viewModel.selectedInterests.contains(tag) ? .white : .black)
+                            .background(viewModel.selectedInterests.contains(tag) ? .blue.opacity(0.8) : .primary.opacity(0.2))
+                            .foregroundColor(viewModel.selectedInterests.contains(tag) ? .white : .primary)
                             .cornerRadius(8)
                             .onTapGesture {
                                 viewModel.toggleInterest(tag)

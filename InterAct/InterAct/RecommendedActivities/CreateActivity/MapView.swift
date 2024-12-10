@@ -15,8 +15,6 @@ struct MapView: View {
     
     @StateObject var viewModel = MapViewModel()
     
-    @State private var locationManager = CLLocationManager()
-
     @Environment(\.dismiss) var dismiss
     
     init(selectedLocation: Binding<CLLocationCoordinate2D?>, locationName: Binding<String>) {
@@ -98,7 +96,7 @@ struct MapView: View {
         .overlay(
             Group {
                 if viewModel.errorSearchMessage != nil {
-                    Text("搜索失败🥺🥺🥺")
+                    Text("搜索/定位失败🥺🥺🥺")
                         .padding()
                         .background(Color.black.opacity(0.7))
                         .foregroundColor(.white)
@@ -115,15 +113,15 @@ struct MapView: View {
             },
             alignment: .bottom
         )
-        .onChange(of: locationManager.authorizationStatus) { oldValue, status in
-            if status == .authorizedWhenInUse || status == .authorizedAlways {
-                DispatchQueue(label: "定位", qos: .background).async {
-                    locationManager.delegate = locationManager as? CLLocationManagerDelegate
-                    locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-                    locationManager.startUpdatingLocation()
-                }
-            }
-        }
+//        .onChange(of: vlocationManager.authorizationStatus) { oldValue, status in
+//            if status == .authorizedWhenInUse || status == .authorizedAlways {
+//                DispatchQueue(label: "定位", qos: .background).async {
+//                    locationManager.delegate = locationManager as? CLLocationManagerDelegate
+//                    locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+//                    locationManager.startUpdatingLocation()
+//                }
+//            }
+//        }
         .onChange(of: viewModel.selectedLocation) { oldLocation, newLocation in
             if let newLocation = newLocation {
                 if selectedLocation == nil || selectedLocation?.latitude != newLocation.latitude || selectedLocation?.longitude != newLocation.longitude {

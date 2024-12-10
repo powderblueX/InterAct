@@ -41,10 +41,10 @@ struct ActivityCardView: View {
                 .font(.footnote)
                 .padding(.top, 1)
                 .foregroundColor(.brown)
-            
+                .background(Color(UIColor.secondarySystemBackground)) // 背景颜色
         }
         .padding()
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground)) // 背景颜色
         .cornerRadius(10)
         .shadow(radius: 5)
     }

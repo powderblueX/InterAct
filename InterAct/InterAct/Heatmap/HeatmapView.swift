@@ -11,7 +11,6 @@ import Charts
 
 struct HeatmapView: View {
     @StateObject private var viewModel = HeatmapViewModel()
-    @State private var locationManager = CLLocationManager()
     
     var body: some View {
         VStack{
@@ -37,6 +36,8 @@ struct HeatmapView: View {
                 Map(position: $viewModel.position){
                     Marker("搜索位置", coordinate: viewModel.selectedLocation ??  CLLocationCoordinate2D(latitude: 39.90318236, longitude: 116.397755))
                         .tint(.orange)
+                    Marker("我的位置", coordinate: viewModel.hostLocation ??  CLLocationCoordinate2D(latitude: 39.90318236, longitude: 116.397755))
+                        .tint(.blue)
                     ForEach(viewModel.regions){ region in
                         Annotation("", coordinate: region.center) {
                             Circle()
@@ -112,7 +113,7 @@ struct HeatmapView: View {
                             .padding(.bottom, 5)
                         }
                         .padding()
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white).shadow(radius: 10))
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(UIColor.systemBackground)).shadow(radius: 10))
                         .padding(.top, 40) // 距离顶部一定的空间
                         .frame(maxWidth: 300) // 使其横向扩展
                         .animation(.spring(), value: region) // 动画效果
@@ -124,7 +125,7 @@ struct HeatmapView: View {
         .overlay(
             Group {
                 if viewModel.errorSearchMessage != nil {
-                    Text("搜索失败🥺🥺🥺")
+                    Text("搜索/定位失败🥺🥺🥺")
                         .padding()
                         .background(Color.black.opacity(0.7))
                         .foregroundColor(.white)
@@ -141,15 +142,6 @@ struct HeatmapView: View {
             },
             alignment: .bottom
         )
-        .onChange(of: locationManager.authorizationStatus) { oldValue, status in
-            if status == .authorizedWhenInUse || status == .authorizedAlways {
-                DispatchQueue(label: "定位", qos: .background).async {
-                    locationManager.delegate = locationManager as? CLLocationManagerDelegate
-                    locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-                    locationManager.startUpdatingLocation()
-                }
-            }
-        }
         .onChange(of: viewModel.selectedLocation) { oldLocation, newLocation in
             if let newLocation = newLocation {
                 if viewModel.selectedLocation == nil || viewModel.selectedLocation?.latitude != newLocation.latitude || viewModel.selectedLocation?.longitude != newLocation.longitude {

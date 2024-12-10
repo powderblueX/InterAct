@@ -12,6 +12,9 @@ import UserNotifications
 class AppDelegate: NSObject, UIApplicationDelegate {
     // 当应用启动完成时会调用
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // 检测当前深色模式并更新图标
+        updateAppIcon(for: UITraitCollection.current.userInterfaceStyle == .dark)
+        
         // LeanCloud 初始化代码
         do {
             try LCApplication.default.set(
@@ -24,6 +27,22 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         }
         
         return true
+    }
+    
+    func updateAppIcon(for isDarkMode: Bool) {
+        print("当前深色模式：\(isDarkMode ? "是" : "否")")
+        guard UIApplication.shared.supportsAlternateIcons else {
+            print("不支持动态图标切换:\(UIApplication.shared.supportsAlternateIcons)")
+            return
+        }
+        let iconName = isDarkMode ? "DarkModeIcon" : nil
+        UIApplication.shared.setAlternateIconName(iconName) { error in
+            if let error = error {
+                print("图标切换失败: \(error.localizedDescription)")
+            } else {
+                print("图标切换成功")
+            }
+        }
     }
     
     // 处理应用的深链接

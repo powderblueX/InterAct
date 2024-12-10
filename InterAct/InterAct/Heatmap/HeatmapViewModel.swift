@@ -12,8 +12,9 @@ import _MapKit_SwiftUI
 import LeanCloud
 import SwiftUI
 
-class HeatmapViewModel: ObservableObject {
+class HeatmapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var selectedLocation: CLLocationCoordinate2D? = CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555)
+    @Published var hostLocation: CLLocationCoordinate2D? = CLLocationCoordinate2D(latitude: 39.90750000, longitude: 116.38805555) // 默认发起人位置
     @Published var locationName: String = ""
     @Published var searchText: String = ""
     @Published var position: MapCameraPosition = .automatic
@@ -42,6 +43,26 @@ class HeatmapViewModel: ObservableObject {
         }
     }
     
+    // CLLocationManager 实例
+    private var locationManager = CLLocationManager()
+    
+    override init() {
+        super.init()
+        locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization() // 请求授权
+        locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        locationManager.startUpdatingLocation() // 开始位置更新
+    }
+    
+    // 获取设备当前位置
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let newLocation = locations.first else { return }
+        
+        // 更新设备当前位置信息
+        self.selectedLocation = newLocation.coordinate
+        self.hostLocation = newLocation.coordinate
+    }
+    
     // 设置地图位置到选中的点
     func setCameraToSelectedLocation() {
         if let selectedLocation = selectedLocation {
@@ -56,7 +77,7 @@ class HeatmapViewModel: ObservableObject {
         var regionDict: [String: HeatmapRegion] = [:]
         for activity in activities {
             // 将经纬度归为某个网格（0.01 度为步长，模拟聚合逻辑）
-            let key = "\(Int(activity.location.latitude * 100))-\(Int(activity.location.longitude * 100))"
+            let key = "\(Int(activity.location.latitude * 200))-\(Int(activity.location.longitude * 200))"
             if regionDict[key] == nil {
                 regionDict[key] = HeatmapRegion(center: activity.location, activities: [])
             }

@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  EcoStep
+//  InterAct
 //
 //  Created by admin on 2024/11/23.
 //
@@ -10,6 +10,11 @@ import SwiftUI
 struct SettingsView: View {
     @Binding var userInfo: MyInfoModel?
     @StateObject private var viewModel = SettingsViewModel()
+    let iconOptions = [
+            ("默认图标", nil),
+            ("深色模式图标", "InterActDarkIcon"),
+            ("节日图标", "InterActHolidayIcon")
+        ]
 
     var body: some View {
         List {
@@ -32,6 +37,25 @@ struct SettingsView: View {
                     Text("修改密码")
                 }
             }
+            
+            Section(header: Text("外观设置")) {
+                Toggle(isOn: $viewModel.isDarkMode) {
+                    Text("深色模式")
+                }
+                .onChange(of: viewModel.isDarkMode) {
+                    // 更新用户界面样式
+                    viewModel.updateAppearance()
+                }
+                Section(header: Text("应用外观")) {
+                    ForEach(iconOptions, id: \.1) { option in
+                        Button(option.0) {
+                            viewModel.switchToIcon(named: option.1)
+                        }
+                    }
+                }
+            }
+            
+
             
             Section(header: Text("关于我们")) {
                 Text("版本：1.0.0")

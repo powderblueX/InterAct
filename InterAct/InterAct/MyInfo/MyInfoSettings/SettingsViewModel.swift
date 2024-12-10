@@ -1,6 +1,6 @@
 //
 //  SettingsViewModel.swift
-//  EcoStep
+//  InterAct
 //
 //  Created by admin on 2024/11/25.
 //
@@ -12,6 +12,7 @@ import SwiftUI
 class SettingsViewModel: ObservableObject {
     private let leanCloudService = LeanCloudService()
     @Published var showLogoutAlert = false // 控制退出登录确认弹窗
+    @AppStorage("isDarkMode") var isDarkMode: Bool = false
     
     func logout() {
         // 清除 LeanCloud 的会话
@@ -33,4 +34,26 @@ class SettingsViewModel: ObservableObject {
         }
     }
     
+    func updateAppearance() {
+        let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+        scene?.windows.forEach { window in
+            window.overrideUserInterfaceStyle = isDarkMode ? .dark : .light
+        }
+    }
+    
+    func switchToIcon(named iconName: String?) {
+        guard UIApplication.shared.supportsAlternateIcons else {
+            print("当前设备不支持动态图标")
+            return
+        }
+        UIApplication.shared.setAlternateIconName(iconName) { error in
+            if let error = error {
+                print("图标切换失败: \(error.localizedDescription)")
+            } else {
+                print("图标切换成功为: \(iconName ?? "默认图标")")
+            }
+        }
+    }
 }
+
+

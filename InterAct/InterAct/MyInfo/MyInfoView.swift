@@ -81,20 +81,12 @@ struct MyInfoView: View {
                             
                             HStack{
                                 // 用户帖子和收藏
-                                Section(header: Text("我的帖子")) {
-                                    ForEach(userInfo.posts) { post in
-                                        NavigationLink(destination: PostDetailView(post: post)) {
-                                            Text(post.title)
-                                        }
-                                    }
+                                Section(header: Text("我发起的活动")) {
+                                    
                                 }
                                 
-                                Section(header: Text("我的收藏")) {
-                                    ForEach(userInfo.favorites) { post in
-                                        NavigationLink(destination: PostDetailView(post: post)) {
-                                            Text(post.title)
-                                        }
-                                    }
+                                Section(header: Text("我参与的活动")) {
+                                    
                                 }
                             }
                         }
@@ -122,13 +114,5 @@ struct MyInfoView: View {
     }
 }
 
-// TODO:帖子详情视图
-struct PostDetailView: View {
-    let post: MyInfoModel.Post
 
-    var body: some View {
-        Text(post.content)
-            .navigationTitle(post.title)
-    }
-}
 

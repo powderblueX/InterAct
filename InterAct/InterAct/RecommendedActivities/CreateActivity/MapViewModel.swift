@@ -10,7 +10,7 @@ import Combine
 import CoreLocation
 import _MapKit_SwiftUI
 
-class MapViewModel: ObservableObject {
+class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var selectedLocation: CLLocationCoordinate2D? = CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555)
     @Published var locationName: String = ""
     @Published var searchText: String = ""
@@ -21,6 +21,25 @@ class MapViewModel: ObservableObject {
     )
     
     @Published var errorSearchMessage: String? = nil
+    
+    // CLLocationManager 实例
+    private var locationManager = CLLocationManager()
+    
+    override init() {
+        super.init()
+        locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization() // 请求授权
+        locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        locationManager.startUpdatingLocation() // 开始位置更新
+    }
+    
+    // 获取设备当前位置
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let newLocation = locations.first else { return }
+        
+        // 更新设备当前位置信息
+        self.selectedLocation = newLocation.coordinate
+    }
     
     // 搜索地址的函数
     func searchAddress(searchText: String) {
