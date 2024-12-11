@@ -79,15 +79,23 @@ struct MyInfoView: View {
                                 Text("我的声望：\(userInfo.exp)")
                             }
                             
-                            HStack{
-                                // 用户帖子和收藏
-                                Section(header: Text("我发起的活动")) {
-                                    
+                            VStack{
+                                Picker("我&活动", selection: $viewModel.MeAndActivities) {
+                                    Text("🎗️我参与的活动🎗️").tag(true)
+                                    Text("📣我的声望记录📣").tag(false)
                                 }
+                                .pickerStyle(SegmentedPickerStyle())
+                                .padding(.horizontal, 7)
+                                .padding(.top, 7)
                                 
-                                Section(header: Text("我参与的活动")) {
-                                    
+                                VStack{
+                                    if viewModel.MeAndActivities {
+                                        HistoryActivitiesView()
+                                    }
                                 }
+                                .frame(height: 500)
+                                .shadow(radius: 10)
+                                .border(Color(UIColor.systemBackground))
                             }
                         }
                         .padding()

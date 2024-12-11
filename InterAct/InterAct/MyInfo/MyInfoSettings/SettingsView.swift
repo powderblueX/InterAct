@@ -10,11 +10,6 @@ import SwiftUI
 struct SettingsView: View {
     @Binding var userInfo: MyInfoModel?
     @StateObject private var viewModel = SettingsViewModel()
-    let iconOptions = [
-            ("默认图标", nil),
-            ("深色模式图标", "InterActDarkIcon"),
-            ("节日图标", "InterActHolidayIcon")
-        ]
 
     var body: some View {
         List {
@@ -46,17 +41,12 @@ struct SettingsView: View {
                     // 更新用户界面样式
                     viewModel.updateAppearance()
                 }
-                Section(header: Text("应用外观")) {
-                    ForEach(iconOptions, id: \.1) { option in
-                        Button(option.0) {
-                            viewModel.switchToIcon(named: option.1)
-                        }
-                    }
+                
+                NavigationLink(destination: ChangeIconView()){
+                    Text("外观图标")
                 }
             }
-            
 
-            
             Section(header: Text("关于我们")) {
                 Text("版本：1.0.0")
             }

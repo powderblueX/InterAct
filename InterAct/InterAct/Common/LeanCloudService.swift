@@ -369,7 +369,7 @@ struct LeanCloudService {
         
         // 过滤活动时间晚于当前时间的活动
         query.whereKey("activityTime", .greaterThan(LCDate(currentDate))) // 活动时间必须在当前时间之后
-        
+        query.orderedKeys = "activityTime"
         // 设置分页参数
         query.limit = pageSize  // 每页数量
         query.skip = (page - 1) * pageSize  // 跳过前面的数据
@@ -448,6 +448,7 @@ struct LeanCloudService {
         
         // 过滤活动时间晚于当前时间的活动
         query.whereKey("activityTime", .greaterThan(LCDate(currentDate))) // 活动时间必须在当前时间之后
+        query.orderedKeys = "activityTime"
         
         // 设置分页参数
         query.limit = pageSize  // 每页数量
@@ -515,6 +516,119 @@ struct LeanCloudService {
             }
         }
     }
+    
+    
+    // 加载用户参与的活动
+    static func fetchAllActivitiesIParticipatein(currentUserId: String, page: Int, pageSize: Int, completion: @escaping ([Activity]?, Int) -> Void) {
+        let query = LCQuery(className: "Activity")
+        
+        // 过滤兴趣标签匹配的活动
+        query.whereKey("participantIds", .containedIn([currentUserId]))
+        query.orderedKeys = "-activityTime"
+        
+        // 设置分页参数
+        query.limit = pageSize  // 每页数量
+        query.skip = (page - 1) * pageSize  // 跳过前面的数据
+
+        // 先查询总记录数
+        let countQuery = LCQuery(className: "Activity")
+        countQuery.whereKey("participantIds", .containedIn([currentUserId]))
+
+        countQuery.count { result in
+            switch result {
+            case .success(let totalCount):
+                // 计算总页数
+                let totalPages = Int(ceil(Double(totalCount) / Double(pageSize)))  // 总页数
+                query.find { result in
+                    switch result {
+                    case .success(let objects):
+                        // 提取所有的 hostId
+                        let hostIds = objects.compactMap { $0["hostId"]?.stringValue }
+                        
+                        // 查询所有 hostId 对应的用户名
+                        let userQuery = LCQuery(className: "_User") // 假设 User 表名为 "_User"
+                        userQuery.whereKey("objectId", .containedIn(hostIds))
+                        userQuery.find { userResult in
+                            switch userResult {
+                            case .success(let userObjects):
+                                // 创建一个字典，将 hostId 映射到 username
+                                let hostIdToUsername = Dictionary(uniqueKeysWithValues: userObjects.compactMap { user -> (String, String)? in
+                                    guard let userId = user.objectId?.stringValue,
+                                          let username = user["username"]?.stringValue else {
+                                        return nil
+                                    }
+                                    return (userId, username)
+                                })
+                                
+                                // 将查询结果转化为 Activity 对象
+                                let fetchedActivities = objects.compactMap { object -> Activity? in
+                                    guard let activityName = object["activityName"]?.stringValue,
+                                          let interestTag = object["interestTag"]?.arrayValue,
+                                          let activityTime = object["activityTime"]?.dateValue,
+                                          let activityDescription = object["activityDescription"]?.stringValue,
+                                          let hostId = object["hostId"]?.stringValue,
+                                          let participantsCount = object["participantsCount"]?.intValue,
+                                          let participantIds = object["participantIds"]?.arrayValue,
+                                          let location = object["location"] as? LCGeoPoint,
+                                          let locationName = object["locationName"]?.stringValue
+                                    else {
+                                        return nil
+                                    }
+                                    
+                                    let imageURLString = object["image"]?.stringValue ?? ""
+                                    let image = imageURLString.isEmpty ? nil : URL(string: imageURLString)
+                                    
+                                    // 使用 hostId 从字典中查找 username
+                                    let hostUsername = hostIdToUsername[hostId] ?? "未知用户"
+                                    
+                                    // 创建 Activity 对象
+                                    return Activity(
+                                        id: object.objectId!.stringValue ?? "",
+                                        activityName: activityName,
+                                        interestTag: interestTag as? Array<String> ?? [],
+                                        activityTime: activityTime,
+                                        activityDescription: activityDescription,
+                                        hostId: hostId,
+                                        hostUsername: hostUsername,
+                                        participantsCount: participantsCount,
+                                        participantIds: participantIds as? Array<String> ?? [],
+                                        location: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude),
+                                        locationName: locationName,
+                                        image: image
+                                    )
+                                }
+                                
+                                // 更新活动列表
+                                DispatchQueue.main.async {
+                                    completion(fetchedActivities, totalPages)
+                                }
+                                
+                            case .failure(let error):
+                                // 错误处理
+                                DispatchQueue.main.async {
+                                    print("查询用户失败: \(error.localizedDescription)")
+                                    completion(nil, 0)
+                                }
+                            }
+                        }
+                    case .failure(let error):
+                        // 错误处理
+                        DispatchQueue.main.async {
+                            print("查询活动失败: \(error.localizedDescription)")
+                            completion(nil, 0)
+                        }
+                    }
+                }
+            case .failure(let error):
+                // 错误处理
+                DispatchQueue.main.async {
+                    print("查询总数失败: \(error.localizedDescription)")
+                    completion(nil, 0)
+                }
+            }
+        }
+    }
+
     
     
     // 获取活动详细信息

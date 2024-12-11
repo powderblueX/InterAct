@@ -40,20 +40,6 @@ class SettingsViewModel: ObservableObject {
             window.overrideUserInterfaceStyle = isDarkMode ? .dark : .light
         }
     }
-    
-    func switchToIcon(named iconName: String?) {
-        guard UIApplication.shared.supportsAlternateIcons else {
-            print("当前设备不支持动态图标")
-            return
-        }
-        UIApplication.shared.setAlternateIconName(iconName) { error in
-            if let error = error {
-                print("图标切换失败: \(error.localizedDescription)")
-            } else {
-                print("图标切换成功为: \(iconName ?? "默认图标")")
-            }
-        }
-    }
 }
 
 

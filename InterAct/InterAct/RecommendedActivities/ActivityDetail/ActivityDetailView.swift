@@ -28,6 +28,8 @@ struct ActivityDetailView: View {
                     
                     VStack(alignment: .leading, spacing: 15) {
                         HStack {
+                            Image(systemName: "person.circle")
+                                .font(.system(size: 25, weight: .semibold))
                             Text("发起人：    ")
                                 .font(.system(size: 25, weight: .semibold))
                             HStack {
@@ -51,6 +53,8 @@ struct ActivityDetailView: View {
                         // 活动兴趣标签
                         // 兴趣标签
                         HStack {
+                            Image(systemName: "figure.outdoor.soccer.circle")
+                                .font(.system(size: 25, weight: .semibold))
                             Text("兴趣标签：")
                                 .font(.system(size: 25, weight: .semibold))
                             Text(viewModel.activity?.interestTag.joined(separator: ", ") ?? "加载中...")
@@ -60,6 +64,8 @@ struct ActivityDetailView: View {
                         
                         // 活动日期
                         HStack {
+                            Image(systemName: "clock.circle")
+                                .font(.system(size: 25, weight: .semibold))
                             Text("活动时间：")
                                 .font(.system(size: 25, weight: .semibold))
                             Text(viewModel.activity?.formattedTime ?? "加载中...")
@@ -69,6 +75,8 @@ struct ActivityDetailView: View {
                         
                         // 参与人数
                         HStack {
+                            Image(systemName: "figure.2.circle")
+                                .font(.system(size: 25, weight: .semibold))
                             Text("参与人数：")
                                 .font(.system(size: 25, weight: .semibold))
                             Text("\(viewModel.activity?.participantIds.count ?? 0)/\(viewModel.activity?.participantsCount ?? 0)")
@@ -78,19 +86,21 @@ struct ActivityDetailView: View {
                         
                         // 活动地点
                         HStack {
+                            Image(systemName: "mappin.circle")
+                                .font(.system(size: 25, weight: .semibold))
                             Text("活动地点：")
                                 .font(.system(size: 25, weight: .semibold))
                             Text(viewModel.activity?.locationName ?? "加载中...")
                                 .font(.system(size: 22, weight: .semibold))
                                 .foregroundColor(.orange)
                                 .onTapGesture {
-                                    // 点击活动地点时，显示地图
                                     viewModel.showMap = true
                                 }
                         }
-        
-                        // 活动简介部分，使用 ScrollView
+
                         HStack{
+                            Image(systemName: "text.justify.left")
+                                .font(.system(size: 25, weight: .semibold))
                             Text("活动简介：")
                                 .font(.system(size: 25, weight: .semibold))
                         }
@@ -114,7 +124,6 @@ struct ActivityDetailView: View {
                                     .scaledToFill()
                                     .frame(width: 200, height: 200)
                                     .onTapGesture {
-                                        // 点击头像，显示大图
                                         viewModel.isImageSheetPresented = true
                                     }
                                     .contextMenu {
@@ -177,6 +186,16 @@ struct ActivityDetailView: View {
                 }
                 .padding()
             }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        viewModel.shareOrCopyDeepLink(activityID: activityId)
+                    }) {
+                        Image(systemName: "square.and.arrow.up")
+                            .foregroundColor(.blue)
+                    }
+                }
+            }
             
             // 气泡视图，显示发起人信息
             if viewModel.showProfileBubble {
@@ -213,7 +232,7 @@ struct ActivityDetailView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                             
-                            Text("经验：\(viewModel.hostInfo?.exp ?? 0)")
+                            Text("声望：\(viewModel.hostInfo?.exp ?? 0)")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
@@ -229,6 +248,10 @@ struct ActivityDetailView: View {
                 }
                 .onAppear{
                     viewModel.fetchHostInfo(for: viewModel.activity?.hostId ?? "")
+                }
+                .onDisappear{
+                    AppState.shared.activityIDToShow = nil
+                    AppState.shared.isToShow = false
                 }
                 .padding()
             }

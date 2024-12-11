@@ -53,26 +53,39 @@ struct RecommendActivitiesView: View {
                     // 活动列表
                     ScrollView {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            ForEach(viewModel.activities, id: \.id) { activity in
-                                NavigationLink(
-                                    destination: ActivityDetailView(activityId: activity.id),
-                                    label: {
-                                        ActivityCardView(activity: activity)
-                                            .frame(height: 150)
-                                            .padding(.top, 7)
-                                    }
-                                )
-                                .buttonStyle(PlainButtonStyle())
+                            if viewModel.useInterestFilter{
+                                ForEach(viewModel.activitiesByInterest, id: \.id) { activity in
+                                    NavigationLink(
+                                        destination: ActivityDetailView(activityId: activity.id),
+                                        label: {
+                                            ActivityCardView(activity: activity)
+                                                .frame(height: 150)
+                                                .padding(.top, 7)
+                                        }
+                                    )
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            } else {
+                                ForEach(viewModel.activities, id: \.id) { activity in
+                                    NavigationLink(
+                                        destination: ActivityDetailView(activityId: activity.id),
+                                        label: {
+                                            ActivityCardView(activity: activity)
+                                                .frame(height: 150)
+                                                .padding(.top, 7)
+                                        }
+                                    )
+                                    .buttonStyle(PlainButtonStyle())
+                                }
                             }
                         }
                         .padding(.top, 10)
                         .padding(.leading, 5)
                         .padding(.trailing, 5)
                         
-                        // 显示“继续加载”按钮
                         if viewModel.hasMoreData && !viewModel.isLoadingMore {
                             Button(action: {
-                                viewModel.loadMoreActivities()
+                                viewModel.loadMoreActivities(useInterestFilter: viewModel.useInterestFilter)
                             }) {
                                 Text("-------继续加载-------")
                                     .foregroundColor(.blue)

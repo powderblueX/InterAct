@@ -13,6 +13,7 @@ class MyInfoViewModel: ObservableObject {
     @Published var userInfo: MyInfoModel?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
+    @Published var MeAndActivities: Bool = true
 
     init() {
         fetchUserInfo()
@@ -23,7 +24,7 @@ class MyInfoViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // 从 UserDefaults 获取已登录的用户名
+        // 从 UserDefaults 获取已登录的用户名 TODO: 登出
         guard let objectId = UserDefaults.standard.string(forKey: "objectId") else {
             self.isLoading = false
             self.errorMessage = "未找到已登录的ID"

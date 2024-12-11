@@ -24,15 +24,19 @@ class RecommendedActivitiesViewModel: NSObject, ObservableObject, CLLocationMana
     
     // 分页相关
     @Published var currentPage: Int = 1        // 当前页数
-    @Published var totalPages = 1      // 每次加载的活动数量
+    @Published var totalPages: Int = 1      // 每次加载的活动数量
     @Published var isLoading: Bool = false    // 标记是否正在加载数据
     @Published var isLoadingMore: Bool = false // 是否正在加载更多数据
     @Published var hasMoreData: Bool = true // 是否还有更多数据
     @Published var isForMore: Bool = false
-
-    private let pageSize = 10 // 每页加载8条活动
+    private let pageSize = 10 // 每页加载 10 条活动
     
     private var locationManager = CLLocationManager() // CLLocationManager 实例
+    
+    
+    @Published var activitiesByInterest: [Activity] = []
+    @Published var currentPageByInterest: Int = 1        // 当前页数
+    @Published var totalPagesByInterest: Int = 1
     
     override init() {
         super.init()
@@ -64,7 +68,7 @@ class RecommendedActivitiesViewModel: NSObject, ObservableObject, CLLocationMana
                 fetchAllActivities(page: currentPage)
             } else if useInterestFilter {
                 // 否则，根据用户的兴趣标签加载相应的活动
-                fetchActivitiesByInterests(interests: interests, page: currentPage)
+                fetchActivitiesByInterests(interests: interests, page: currentPageByInterest)
             }
             else {
                 // 用户有特别的兴趣标签但依然选择加载所有活动
@@ -87,13 +91,13 @@ class RecommendedActivitiesViewModel: NSObject, ObservableObject, CLLocationMana
             // 更新活动列表
             if let activities = fetchedActivities {
                 if page == 1 {
-                    self.activities = activities // 如果是第一页，替换活动列表
+                    self.activitiesByInterest = activities // 如果是第一页，替换活动列表
                 } else if hasMoreData && isForMore {
-                    self.activities.append(contentsOf: activities) // 如果是后续页，追加活动
+                    self.activitiesByInterest.append(contentsOf: activities) // 如果是后续页，追加活动
                     isForMore = false
                 }
-                self.totalPages = totalPages
-                self.hasMoreData = self.currentPage < self.totalPages
+                self.totalPagesByInterest = totalPages
+                self.hasMoreData = self.currentPageByInterest < self.totalPagesByInterest
                 self.sortActivities()
             } else {
                 print("没有找到活动")
@@ -127,11 +131,15 @@ class RecommendedActivitiesViewModel: NSObject, ObservableObject, CLLocationMana
     }
     
     // 加载更多数据
-    func loadMoreActivities() {
+    func loadMoreActivities(useInterestFilter: Bool) {
         guard !isLoading && hasMoreData else { return }
         
         isLoadingMore = true
-        currentPage += 1
+        if useInterestFilter {
+            currentPageByInterest += 1
+        } else {
+            currentPage += 1
+        }
         isForMore = true
         fetchActivities() // 继续加载活动
         isLoadingMore = false

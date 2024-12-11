@@ -86,4 +86,83 @@ class ActivityDetailViewModel: NSObject, ObservableObject, CLLocationManagerDele
         }
         currentUserId = objectId
     }
+    
+    // 生成深链接并分享或复制
+    func shareOrCopyDeepLink(activityID: String) {
+        guard let deepLinkURL = generateDeepLink(activityID: activityID) else {
+            print("生成深链接失败")
+            return
+        }
+        
+        let shareOptions = [
+            "分享到其他应用",
+            "复制链接到剪切板"
+        ]
+        
+        // 弹出选项表单
+        let alertController = UIAlertController(
+            title: "分享",
+            message: "选择操作",
+            preferredStyle: .actionSheet
+        )
+        
+        // 分享选项
+        let shareAction = UIAlertAction(title: shareOptions[0], style: .default) { _ in
+            self.showShareSheet(with: deepLinkURL)
+        }
+        alertController.addAction(shareAction)
+        
+        // 复制选项
+        let copyAction = UIAlertAction(title: shareOptions[1], style: .default) { _ in
+            self.copyToClipboard(deepLinkURL.absoluteString)
+        }
+        alertController.addAction(copyAction)
+        
+        // 取消选项
+        let cancelAction = UIAlertAction(title: "取消", style: .cancel)
+        alertController.addAction(cancelAction)
+        
+        // 显示选项菜单
+        if let topController = UIApplication.topViewController {
+            topController.present(alertController, animated: true)
+        }
+    }
+    
+    /// 生成深链接
+    private func generateDeepLink(activityID: String) -> URL? {
+        var components = URLComponents()
+        components.scheme = "XInterActApp"
+        components.host = "activity"
+        components.queryItems = [
+            URLQueryItem(name: "id", value: activityID)
+        ]
+        return components.url
+    }
+    
+    /// 显示分享面板
+    private func showShareSheet(with url: URL) {
+        let activityViewController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        if let topController = UIApplication.topViewController {
+            topController.present(activityViewController, animated: true)
+        }
+    }
+    
+    /// 复制链接到剪切板
+    private func copyToClipboard(_ text: String) {
+        UIPasteboard.general.string = text
+        print("链接已复制到剪切板: \(text)")
+    }
+    
+    
+}
+
+
+extension UIApplication {
+    static var topViewController: UIViewController? {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = scene.windows.first else {
+            return nil
+        }
+        return window.rootViewController
+    }
 }
