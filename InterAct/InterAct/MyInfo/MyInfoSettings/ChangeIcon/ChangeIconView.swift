@@ -19,7 +19,9 @@ struct ChangeIconView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 44,height: 44)
                         .cornerRadius(12)
+                    
                     Text(icon.rawValue)
+                        .padding(.leading, 20)
                 }
                 .onTapGesture {
                     viewModel.setUserCustomIcon(name: icon)

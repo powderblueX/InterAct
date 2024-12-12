@@ -63,8 +63,8 @@ struct GroupChatView: View {
         .onDisappear{
             viewModel.readMessages()
         }
-        .navigationBarTitle("\(groupChat.activityName)(\(groupChat.participantIds.count))", displayMode: .inline) // TODO: 推广
-        .navigationBarItems(trailing: NavigationLink(destination: GroupChatManageView(groupChat: groupChat)) {
+        .navigationBarTitle("\(groupChat.activityName)(\(groupChat.participantIds.count))", displayMode: .inline)
+        .navigationBarItems(trailing: NavigationLink(destination: GroupChatManageView(groupChat: groupChat, participantsInfo: viewModel.participantsInfo ?? [], currentUserId: viewModel.currentUserId ?? "")) {
             Image(systemName: "gearshape")
                 .imageScale(.large)
         })

@@ -150,7 +150,7 @@ class ActivityDetailViewModel: NSObject, ObservableObject, CLLocationManagerDele
     /// 复制链接到剪切板
     private func copyToClipboard(_ text: String) {
         UIPasteboard.general.string = text
-        print("链接已复制到剪切板: \(text)")
+        print("链接已复制到剪切板: \(text)") // TODO: 
     }
     
     

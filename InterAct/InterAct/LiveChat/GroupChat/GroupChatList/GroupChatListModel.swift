@@ -10,6 +10,7 @@ import LeanCloud
 
 struct GroupChatList{
     let groupChatId: String
+    let hostId: String
     let activityId: String
     let participantIds: [String]
     let activityName: String

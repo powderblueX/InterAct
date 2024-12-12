@@ -25,14 +25,6 @@ struct PrivateChatView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            NavigationLink(destination: UserProfileView(userInfo: ParticipantInfo(id: viewModel.partner?.id ?? "", username: viewModel.partner?.username ?? "加载中...", avatarURL: viewModel.partner?.avatarURL, gender: viewModel.partner?.gender ?? "加载中..." , exp: viewModel.partner?.exp ?? 0))){
-                Text(viewModel.partner?.username ?? "加载中...")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding()
-                    .foregroundStyle(.blue)
-            }
-            
             // 消息列表
             ScrollViewReader { proxy in
                 ScrollView {
@@ -126,6 +118,7 @@ struct PrivateChatView: View {
         .onDisappear{
             viewModel.readMessages()
         }
+        .navigationBarTitle("\(privateChat.partnerUsername)", displayMode: .inline)
         .alert(isPresented: Binding<Bool>(
             get: { viewModel.onError != nil },
             set: { _ in }

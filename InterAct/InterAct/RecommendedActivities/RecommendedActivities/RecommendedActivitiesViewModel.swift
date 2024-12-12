@@ -16,6 +16,7 @@ import LeanCloud
 class RecommendedActivitiesViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var activities: [Activity] = []
     @Published var searchText: String = ""
+    @Published var userInterest: [String] = []
     @Published var myCLLocation: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 39.90750000, longitude: 116.38805555) // 默认发起人位置
     @Published var showingCreateActivityView: Bool = false
     @Published var useInterestFilter: Bool = true
@@ -29,9 +30,9 @@ class RecommendedActivitiesViewModel: NSObject, ObservableObject, CLLocationMana
     @Published var isLoadingMore: Bool = false // 是否正在加载更多数据
     @Published var hasMoreData: Bool = true // 是否还有更多数据
     @Published var isForMore: Bool = false
-    private let pageSize = 10 // 每页加载 10 条活动
+    private let pageSize = 4 // 每页加载 10 条活动
     
-    private var locationManager = CLLocationManager() // CLLocationManager 实例
+    @Published var locationManager = CLLocationManager() // CLLocationManager 实例
     
     
     @Published var activitiesByInterest: [Activity] = []
@@ -54,14 +55,35 @@ class RecommendedActivitiesViewModel: NSObject, ObservableObject, CLLocationMana
         self.myCLLocation = newLocation.coordinate
     }
     
+    func updateStatus(){
+        searchText = ""
+        activities = []
+        activitiesByInterest = []
+        currentPage = 1
+        currentPageByInterest = 1
+        totalPages = 1
+        totalPagesByInterest = 1
+        isForMore = false
+        hasMoreData = true
+        locationManager.startUpdatingLocation()
+        fetchActivities()
+    }
+    
     // 初始化时从 LeanCloud 获取兴趣标签匹配的活动
     func fetchActivities() {
         guard !isLoading else { return } // 如果正在加载，则不重复请求
                 
         isLoading = true // 标记为正在加载
         
+        if userInterest != UserDefaults.standard.array(forKey: "interest") as? [String] {
+            currentPageByInterest = 1
+            totalPagesByInterest = 1
+            activitiesByInterest = []
+        }
+        
         // 从 UserDefaults 获取用户兴趣标签
         if let interests = UserDefaults.standard.array(forKey: "interest") as? [String], !interests.isEmpty {
+            userInterest = interests
             // 检查是否包含 "无🚫" 标签
             if interests.contains("无🚫") {
                 // 如果包含 "无🚫"，则加载所有活动

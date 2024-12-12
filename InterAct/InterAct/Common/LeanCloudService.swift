@@ -10,7 +10,7 @@ import LeanCloud
 import CoreLocation
 import UIKit
 
-struct LeanCloudService { 
+struct LeanCloudService {
     // 用户登录
     static func login(username: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
         // LCUser.logIn 是异步方法，不会抛出错误，因此直接调用即可
@@ -31,7 +31,7 @@ struct LeanCloudService {
                     completion(.failure(NSError(domain: "KeychainError", code: 0, userInfo: [NSLocalizedDescriptionKey: "无法保存密码"])))
                     return
                 }
-
+                
                 completion(.success(())) // 登录成功，返回 .success
             case .failure(let error):
                 completion(.failure(error)) // 登录失败，返回 .failure 并传递错误
@@ -231,11 +231,11 @@ struct LeanCloudService {
             completion(false, "用户未登录")
             return
         }
-
+        
         do {
             let user = LCObject(className: "_User", objectId: LCString(objectId))
             try user.set("interest", value: selectedInterests)
-
+            
             user.save { result in
                 DispatchQueue.main.async {
                     switch result {
@@ -361,7 +361,7 @@ struct LeanCloudService {
     // 根据兴趣标签从数据库获取活动
     static func fetchActivitiesByInterests(interests: [String], page: Int, pageSize: Int, completion: @escaping ([Activity]?, Int) -> Void) {
         let currentDate = Date()
-
+        
         let query = LCQuery(className: "Activity")
         
         // 过滤兴趣标签匹配的活动
@@ -529,11 +529,11 @@ struct LeanCloudService {
         // 设置分页参数
         query.limit = pageSize  // 每页数量
         query.skip = (page - 1) * pageSize  // 跳过前面的数据
-
+        
         // 先查询总记录数
         let countQuery = LCQuery(className: "Activity")
         countQuery.whereKey("participantIds", .containedIn([currentUserId]))
-
+        
         countQuery.count { result in
             switch result {
             case .success(let totalCount):
@@ -628,7 +628,7 @@ struct LeanCloudService {
             }
         }
     }
-
+    
     
     
     // 获取活动详细信息
@@ -784,11 +784,13 @@ struct LeanCloudService {
                     activity["groupChatId"] = LCString(conversation.ID)
                     // 群聊创建成功，继续保存活动信息
                     activity.save { result in
-                        switch result {
-                        case .success:
-                            completion(true, "活动发布成功！活动群聊可在群聊列表中查看！")
-                        case .failure(let error):
-                            completion(false, "发布失败: \(error.localizedDescription)")
+                        // 活动保存成功，更新用户的 exp 字段
+                        updateUserExp(userId: hostId) { success, errorMessage in
+                            if success {
+                                completion(true, "活动发布成功！活动群聊可在群聊列表中查看！")
+                            } else {
+                                completion(false, "活动发布成功，但更新用户经验值失败：\(errorMessage ?? "未知错误")")
+                            }
                         }
                     }
                 case .failure(let error):
@@ -800,6 +802,35 @@ struct LeanCloudService {
             // 处理异常
             print("Error while trying to create conversation: \(error.localizedDescription)")
             completion(false, "群聊创建失败，活动无法发布！")
+        }
+    }
+    // 更新用户的 exp 字段
+    private static func updateUserExp(userId: String, completion: @escaping (Bool, String?) -> Void) {
+        let query = LCQuery(className: "_User")
+        query.whereKey("objectId", .equalTo(userId))
+        
+        query.getFirst { result in
+            switch result {
+            case .success(let user):
+                // 获取当前 exp 值并增加 1
+                if let currentExp = user["exp"]?.intValue {
+                    user["exp"] = LCNumber(integerLiteral: currentExp + 1)
+                } else {
+                    user["exp"] = LCNumber(0) // 如果 exp 不存在，初始化为 1
+                }
+                
+                user.save { result in
+                    switch result {
+                    case .success:
+                        print(123123123)
+                        completion(true, nil)
+                    case .failure(let error):
+                        completion(false, "更新失败: \(error.localizedDescription)")
+                    }
+                }
+            case .failure(let error):
+                completion(false, "查询用户失败: \(error.localizedDescription)")
+            }
         }
     }
     
@@ -908,6 +939,7 @@ struct LeanCloudService {
                             case .success(let activities):
                                 for activity in activities {
                                     // 构造群聊对象
+                                    let hostId = activity["hostId"]?.stringValue ?? ""
                                     let activityName = activity["activityName"]?.stringValue ?? "未知活动"
                                     let activityId = activity.objectId?.stringValue ?? "未知活动ID"
                                     let participantIds = conversation.members ?? [] // 获取群聊成员
@@ -915,6 +947,7 @@ struct LeanCloudService {
                                     
                                     let groupChat = GroupChatList(
                                         groupChatId: groupChatId,
+                                        hostId: hostId,
                                         activityId: activityId,
                                         participantIds: participantIds,
                                         activityName: activityName,
@@ -943,7 +976,7 @@ struct LeanCloudService {
             print(error.localizedDescription)
         }
     }
-
+    
     
     // 获取私信对方的信息（头像和用户名）
     static func fetchUserInfo(for userId: String, completion: @escaping (String, String, String, Int) -> Void) {
@@ -1092,6 +1125,180 @@ struct LeanCloudService {
             case .failure(let error):
                 print("Failed to query Activity: \(error.localizedDescription)")
                 completion(false, "Failed to find activity.")
+            }
+        }
+    }
+    
+    
+    // 活动发起者设置活动状态
+    static func setActivityAsDone(userId: String, activityId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let query = LCQuery(className: "Activity")
+        query.whereKey("hostId", .equalTo(userId))
+        query.whereKey("objectId", .equalTo(activityId))
+        
+        query.getFirst { result in
+            switch result {
+            case .success(let activity):
+                do {
+                    try activity.set("isDone", value: true)
+                    activity.save { saveResult in
+                        switch saveResult {
+                        case .success:
+                            completion(.success(()))
+                        case .failure(let error):
+                            completion(.failure(error))
+                        }
+                    }
+                } catch {
+                    completion(.failure(error))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    
+    // 获取活动状态
+    static func fetchActivityStatus(activityId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let query = LCQuery(className: "Activity")
+        query.whereKey("objectId", .equalTo(activityId))
+        query.getFirst { result in
+            switch result {
+            case .success(let activity):
+                let isDone = activity.get("isDone")?.boolValue ?? false
+                completion(.success(isDone))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    
+    // 完成用户退出群组与活动的操作
+    static func exitGroupAndActivity(conversationId: String, userId: String, activityId: String, isDone: Bool,completion: @escaping (Result<Void, Error>) -> Void) {
+        // Step 1: 从 _Conversation 表中移除用户
+        let conversationQuery = LCQuery(className: "_Conversation")
+        conversationQuery.whereKey("objectId", .equalTo(conversationId))
+        conversationQuery.getFirst { conversationResult in
+            switch conversationResult {
+            case .success(let conversation):
+                var members = conversation.get("m")?.arrayValue as? [String]
+                if let index = members?.firstIndex(of: userId) {
+                    members?.remove(at: index)
+                    do {
+                        try conversation.set("m", value: members)
+                        conversation.save { saveResult in
+                            switch saveResult {
+                            case .success:
+                                if !isDone {
+                                    // Step 2: 从 Activity 表中移除用户
+                                    removeUserFromActivity(activityId: activityId, userId: userId) { activityResult in
+                                        switch activityResult {
+                                        case .success:
+                                            // Step 3: 扣减经验值（如果 Activity.isDone 为 false）
+                                            deductUserExpIfRequired(activityId: activityId, userId: userId) { expResult in
+                                                completion(expResult) // 成功或失败的结果传递回去
+                                            }
+                                        case .failure(let error):
+                                            completion(.failure(error))
+                                        }
+                                    }
+                                }
+                            case .failure(let error):
+                                completion(.failure(error))
+                            }
+                        }
+                    } catch {
+                        completion(.failure(error))
+                    }
+                } else {
+                    completion(.failure(NSError(domain: "LeanCloudService", code: 404, userInfo: [NSLocalizedDescriptionKey: "User not found in _Conversation"])))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    
+    // 从 Activity 中移除用户
+    private static func removeUserFromActivity(activityId: String, userId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let query = LCQuery(className: "Activity")
+        query.whereKey("objectId", .equalTo(activityId))
+        query.getFirst { result in
+            switch result {
+            case .success(let activity):
+                var participants = activity.get("participantIds")?.arrayValue as? [String]
+                if let index = participants?.firstIndex(of: userId) {
+                    participants?.remove(at: index)
+                    do {
+                        try activity.set("participantIds", value: participants)
+                        activity.save { saveResult in
+                            switch saveResult {
+                            case .success:
+                                completion(.success(()))
+                            case .failure(let error):
+                                completion(.failure(error))
+                            }
+                        }
+                    } catch {
+                        completion(.failure(error))
+                    }
+                } else {
+                    completion(.failure(NSError(domain: "LeanCloudService", code: 404, userInfo: [NSLocalizedDescriptionKey: "User not found in Activity"])))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    
+    // 根据 isDone 判断是否扣减经验值
+    private static func deductUserExpIfRequired(activityId: String, userId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let query = LCQuery(className: "Activity")
+        query.whereKey("objectId", .equalTo(activityId))
+        query.getFirst { result in
+            switch result {
+            case .success(let activity):
+                let isDone = activity.get("isDone")?.boolValue ?? false // 默认为 false
+                if !isDone {
+                    // 扣减经验值
+                    deductUserExp(userId: userId, expToDeduct: 3, completion: completion)
+                } else {
+                    completion(.success(())) // 如果 isDone 为 true，直接返回成功
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    
+    // 扣减用户经验值
+    private static func deductUserExp(userId: String, expToDeduct: Int, completion: @escaping (Result<Void, Error>) -> Void) {
+        let query = LCQuery(className: "_User")
+        query.whereKey("objectId", .equalTo(userId))
+        query.getFirst { result in
+            switch result {
+            case .success(let user):
+                let currentExp = user.get("exp")?.intValue ?? 0
+                do {
+                    try user.set("exp", value: currentExp - expToDeduct)
+                    user.save { saveResult in
+                        switch saveResult {
+                        case .success:
+                            completion(.success(()))
+                        case .failure(let error):
+                            completion(.failure(error))
+                        }
+                    }
+                } catch {
+                    completion(.failure(error))
+                }
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
     }

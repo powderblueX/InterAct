@@ -19,8 +19,8 @@ struct RecommendActivitiesView: View {
                     // 页面标题
                     Text("为你推荐")
                         .font(.largeTitle)
+                        .bold()
                         .padding()
-                    
                     // 搜索栏
                     HStack {
                         TextField("搜索活动...", text: $viewModel.searchText)
@@ -49,67 +49,70 @@ struct RecommendActivitiesView: View {
                     .onChange(of: viewModel.useInterestFilter) {
                         viewModel.fetchActivities()  // 根据选择重新加载活动
                     }
-                    
-                    // 活动列表
-                    ScrollView {
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            if viewModel.useInterestFilter{
-                                ForEach(viewModel.activitiesByInterest, id: \.id) { activity in
-                                    NavigationLink(
-                                        destination: ActivityDetailView(activityId: activity.id),
-                                        label: {
-                                            ActivityCardView(activity: activity)
-                                                .frame(height: 150)
-                                                .padding(.top, 7)
-                                        }
-                                    )
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            } else {
-                                ForEach(viewModel.activities, id: \.id) { activity in
-                                    NavigationLink(
-                                        destination: ActivityDetailView(activityId: activity.id),
-                                        label: {
-                                            ActivityCardView(activity: activity)
-                                                .frame(height: 150)
-                                                .padding(.top, 7)
-                                        }
-                                    )
-                                    .buttonStyle(PlainButtonStyle())
+                    if viewModel.isLoading {
+                        ProgressView("加载中...")
+                    } else {
+                        // 活动列表
+                        ScrollView {
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                                if viewModel.useInterestFilter && !viewModel.userInterest.contains("无🚫"){
+                                    ForEach(viewModel.activitiesByInterest, id: \.id) { activity in
+                                        NavigationLink(
+                                            destination: ActivityDetailView(activityId: activity.id),
+                                            label: {
+                                                ActivityCardView(activity: activity)
+                                                    .frame(height: 150)
+                                                    .padding(.top, 7)
+                                            }
+                                        )
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                } else {
+                                    ForEach(viewModel.activities, id: \.id) { activity in
+                                        NavigationLink(
+                                            destination: ActivityDetailView(activityId: activity.id),
+                                            label: {
+                                                ActivityCardView(activity: activity)
+                                                    .frame(height: 150)
+                                                    .padding(.top, 7)
+                                            }
+                                        )
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
                                 }
                             }
-                        }
-                        .padding(.top, 10)
-                        .padding(.leading, 5)
-                        .padding(.trailing, 5)
-                        
-                        if viewModel.hasMoreData && !viewModel.isLoadingMore {
-                            Button(action: {
-                                viewModel.loadMoreActivities(useInterestFilter: viewModel.useInterestFilter)
-                            }) {
-                                Text("-------继续加载-------")
+                            .padding(.top, 10)
+                            .padding(.leading, 5)
+                            .padding(.trailing, 5)
+                            
+                            if viewModel.hasMoreData && !viewModel.isLoadingMore {
+                                Button(action: {
+                                    viewModel.loadMoreActivities(useInterestFilter: viewModel.useInterestFilter && !viewModel.userInterest.contains("无🚫"))
+                                }) {
+                                    Text("-------继续加载-------")
+                                        .foregroundColor(.blue)
+                                        .padding()
+                                }
+                                .padding(.bottom,150)
+                            } else if !viewModel.hasMoreData {
+                                Text("-------已加载全部活动-------")
                                     .foregroundColor(.blue)
                                     .padding()
                             }
-                            .padding(.bottom,150)
-                        } else if !viewModel.hasMoreData {
-                            Text("-------已加载全部活动-------")
-                                .foregroundColor(.blue)
-                                .padding()
+                            
+                            if viewModel.isLoadingMore {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle())
+                                    .padding(.top, 20)
+                            }
                         }
-                        
-                        if viewModel.isLoadingMore {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                                .padding(.top, 20)
-                        }
+                        .padding(.top, 5)
+                        .padding(.leading, 15)
+                        .padding(.trailing, 15)
+                        .background(GeometryReader { geometry in
+                            Color.clear.preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .global).maxY)
+                        })
                     }
-                    .padding(.top, 5)
-                    .padding(.leading, 15)
-                    .padding(.trailing, 15)
-                    .background(GeometryReader { geometry in
-                        Color.clear.preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .global).maxY)
-                    })
                 }
                 .onAppear {
                     viewModel.fetchActivities() // 加载活动
@@ -117,17 +120,32 @@ struct RecommendActivitiesView: View {
                 .sheet(isPresented: $viewModel.showingCreateActivityView) {
                     CreateActivityView()
                 }
-
                 // 圆形按钮，放置在 ZStack 中
                 VStack {
                     Spacer()
                     HStack {
+                        Button(action:{
+                            viewModel.updateStatus()
+                        }) {
+                            Circle()
+                                .fill(.green)
+                                .frame(width: 60, height: 60)
+                                .overlay(
+                                    Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
+                                        .foregroundColor(.white)
+                                        .font(.title)
+                                )
+                                .shadow(radius: 10)
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .bottomLeading)
+                        
                         Spacer()
                         Button(action: {
                             viewModel.showingCreateActivityView.toggle()
                         }) {
                             Circle()
-                                .fill(Color.blue)
+                                .fill(.blue)
                                 .frame(width: 60, height: 60)
                                 .overlay(
                                     Image(systemName: "plus")

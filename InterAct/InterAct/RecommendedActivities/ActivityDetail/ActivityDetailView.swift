@@ -12,6 +12,7 @@ import CoreLocation
 
 struct ActivityDetailView: View {
     @StateObject var viewModel = ActivityDetailViewModel()
+
     var activityId: String
     
     var body: some View {
