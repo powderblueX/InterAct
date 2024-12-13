@@ -61,6 +61,7 @@ struct LoginView: View {
             }
         }
         .padding()
+        .background(Color(UIColor.systemGray5))
     }
 }
 

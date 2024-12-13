@@ -92,7 +92,7 @@ struct RegisterView: View {
                     message: Text(viewModel.alertMessage),
                     dismissButton: .default(Text("确定")) {
                         // 注册成功后关闭当前视图
-                        if viewModel.alertMessage == "注册成功！" {
+                        if viewModel.alertMessage == "请注意查收邮箱，邮箱验证后注册成功哦！" {
                             viewModel.reset() // 重置注册内容
                             presentationMode.wrappedValue.dismiss()
                         }
@@ -100,6 +100,7 @@ struct RegisterView: View {
                 )
             }
         }
+        .background(Color(UIColor.systemGray5))
     }
     
     @ViewBuilder

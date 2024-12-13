@@ -22,6 +22,15 @@ struct LeanCloudService {
                     completion(.failure(NSError(domain: "LoginError", code: 0, userInfo: [NSLocalizedDescriptionKey: "无法获取用户ID"])))
                     return
                 }
+                
+                // 检查邮箱是否已验证
+                if let isVerified = user.get("emailVerified")?.boolValue, isVerified {
+                    completion(.success(()))
+                } else {
+                    let error = NSError(domain: "com.interact", code: 403, userInfo: [NSLocalizedDescriptionKey: "邮箱尚未验证，请先完成邮箱验证。"])
+                    completion(.failure(error))
+                }
+                
                 // 登录成功，将ID，用户名存储到 UserDefaults
                 UserDefaults.standard.set(objectId, forKey: "objectId")
                 UserDefaults.standard.set(username, forKey: "username")
