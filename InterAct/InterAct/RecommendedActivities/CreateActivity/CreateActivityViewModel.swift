@@ -95,22 +95,6 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
         locationManager.stopUpdatingLocation()
     }
     
-    // 地理编码：通过地址获取经纬度
-//    func geocodeAddress(address: String) {
-//        geocoder.geocodeAddressString(address) { [weak self] (placemarks, error) in
-//            if let error = error {
-//                print("Geocoding failed: \(error.localizedDescription)")
-//                return
-//            }
-//            
-//            if let placemark = placemarks?.first, let location = placemark.location {
-//                // 更新选择的经纬度和名称
-//                self?.location = location.coordinate
-//                self?.selectedLocationName = placemark.name ?? "未知位置"
-//            }
-//        }
-//    }
-    
     // 选择地图位置
     func selectLocation(_ newLocation: CLLocationCoordinate2D) {
         location = newLocation
@@ -152,17 +136,33 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
         search.start { response, error in
             if let error = error {
                 print("搜索失败: \(error.localizedDescription)")
-                self.selectedLocationName = "无法获取地名"
+                self.selectedLocationName = "未知地名"
                 return
             }
 
             if let mapItem = response?.mapItems.first {
-                self.selectedLocationName = mapItem.placemark.name ?? "未找到详细地点"
+                self.selectedLocationName = mapItem.placemark.name ?? "未知地名"
             } else {
-                self.selectedLocationName = "未找到匹配地点"
+                self.selectedLocationName = "未知地名"
             }
         }
     }
 }
 
 
+
+// 地理编码：通过地址获取经纬度
+//    func geocodeAddress(address: String) {
+//        geocoder.geocodeAddressString(address) { [weak self] (placemarks, error) in
+//            if let error = error {
+//                print("Geocoding failed: \(error.localizedDescription)")
+//                return
+//            }
+//
+//            if let placemark = placemarks?.first, let location = placemark.location {
+//                // 更新选择的经纬度和名称
+//                self?.location = location.coordinate
+//                self?.selectedLocationName = placemark.name ?? "未知位置"
+//            }
+//        }
+//    }

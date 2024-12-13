@@ -57,7 +57,7 @@ struct PrivateChatView: View {
                         viewModel.sendMessage("好的，我同意你参加：“\(activityName)”")
                         if let userId = viewModel.partner?.id {
                             if !userId.isEmpty{
-                                // 调用静态方法 TODO: 可能需要改到VM中
+                                // TODO: 可能需要改到VM中
                                 LeanCloudService.addUserToConversationAndActivity(userId: userId, activityId: activityId) { success, message in
                                     if success {
                                         print(message)  // 成功消息
@@ -67,8 +67,10 @@ struct PrivateChatView: View {
                                 }
                             }
                         }
+                        viewModel.updatePrivateChat()
                     case -1:
                         viewModel.sendMessage("抱歉，我拒绝你来参加：“\(activityName)”")
+                        viewModel.updatePrivateChat()
                     default: break
                     }
                     activityId = ""

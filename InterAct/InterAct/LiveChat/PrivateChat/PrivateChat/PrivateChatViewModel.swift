@@ -35,6 +35,13 @@ class PrivateChatViewModel: ObservableObject {
     
     @Published var onError: Error?
     
+    func updatePrivateChat(){
+        activityDict = nil
+        messages = []
+        hasMoreMessages = true
+        loadRecentMessages()
+    }
+    
     // 初始化
     init(privateChatId: String, sendParticipateIn: SendParticipateIn? = nil) {
         currentUserId = imClientManager.getCurrentUserId()
@@ -150,6 +157,7 @@ class PrivateChatViewModel: ObservableObject {
                 let messageContent = activityJSONString
                 self.sendMessage("# wannaParticipateIn: " + messageContent)  // 调用发送消息的函数
             }
+            self.sendParticipateIn = nil
         }
         
         do {

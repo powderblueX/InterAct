@@ -91,14 +91,14 @@ class GroupChatViewModel: ObservableObject {
                 switch result {
                 case .success(let createdConversation):
                     self.conversation = createdConversation
-                    print("Successfully created conversation \(String(describing: self.conversation))")
+                    print("Successfully joined conversation \(String(describing: self.conversation))")
                     self.loadRecentMessages()
                 case .failure(let error):
-                    print("Failed to create conversation: \(error)")
+                    print("Failed to joined conversation: \(error)")
                 }
             }
         } catch {
-            print("Failed to create conversation: \(error)")
+            print("Failed to joined conversation: \(error)")
         }
     }
     

@@ -6,10 +6,7 @@
 //
 
 import SwiftUI
-
-import SwiftUI
 import Kingfisher
-import Foundation
 
 struct MyInfoView: View {
     @StateObject private var viewModel = MyInfoViewModel()
@@ -18,109 +15,167 @@ struct MyInfoView: View {
 
     var body: some View {
         NavigationView {
-            VStack(alignment: .leading, spacing: 37){
+            Group {
                 if viewModel.isLoading {
-                    ProgressView("加载中...")
+                    loadingView
                 } else if let userInfo = viewModel.userInfo {
-                    ScrollView {
-                        VStack(spacing: 20) {
-                            // 用户头像
-                            if let avatarURL = userInfo.avatarURL {
-                                KFImage(URL(string: avatarURL.absoluteString))
-                                    .placeholder {
-                                        Image(systemName: "person.crop.circle.fill")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 100, height: 100)
-                                            .clipShape(Circle())
-                                            .foregroundColor(.gray)
-                                    }
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                                    .onTapGesture {
-                                        // 点击头像，显示大图
-                                        isAvatarSheetPresented = true
-                                    }
-                                    .contextMenu {
-                                        // 长按头像弹出保存选项
-                                        Button(action: {
-                                            showSaveImageAlert = true
-                                        }) {
-                                            Label("保存图片", systemImage: "square.and.arrow.down")
-                                        }
-                                    }
-                            } else {
-                                // 如果 avatarURL 为空，显示默认头像
-                                Image(systemName: "person.crop.circle.fill")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                                    .foregroundColor(.gray)  // 默认头像颜色
-                            }
-                            
-                            // 用户名、邮箱
-                            Text(userInfo.username).font(.title)
-                            Text(userInfo.email).font(.subheadline).foregroundColor(.gray)
-                            
-                            // 用户性别和生日
-                            Text("性别：\(userInfo.gender)")
-                            Text("生日：\(userInfo.birthday, style: .date)").environment(\.locale, Locale(identifier: "zh_CN"))
-                            
-                            // 用户的兴趣标签
-                            Text("我的兴趣标签：\(userInfo.interest.joined(separator: "、"))")
-                            
-                            // 用户的声望
-                            if userInfo.exp > 0 {
-                                Text("我的声望：+\(userInfo.exp)")
-                            } else {
-                                Text("我的声望：\(userInfo.exp)")
-                            }
-                            
-                            VStack{
-                                Picker("我&活动", selection: $viewModel.MeAndActivities) {
-                                    Text("🎗️我参与的活动🎗️").tag(true)
-                                    Text("📣我的声望记录📣").tag(false)
-                                }
-                                .pickerStyle(SegmentedPickerStyle())
-                                .padding(.horizontal, 7)
-                                .padding(.top, 7)
-                                
-                                VStack{
-                                    if viewModel.MeAndActivities {
-                                        HistoryActivitiesView()
-                                    }
-                                }
-                                .frame(height: 500)
-                                .shadow(radius: 10)
-                                .border(Color(UIColor.systemBackground))
-                            }
-                        }
-                        .padding()
-                    }
-                    .navigationBarItems(trailing: NavigationLink(destination: SettingsView(userInfo: $viewModel.userInfo)) {
-                        Image(systemName: "gearshape")
-                            .imageScale(.large)
-                    })
+                    contentView(userInfo: userInfo)
                 } else if let errorMessage = viewModel.errorMessage {
-                    Text("加载失败: \(errorMessage)")
+                    errorView(errorMessage: errorMessage)
                 }
             }
+            .navigationBarTitle("我的信息", displayMode: .inline)
+            .navigationBarItems(trailing: settingsButton)
+            .onAppear {
+                viewModel.fetchUserInfo()
+            }
         }
-        // 弹窗展示头像预览
         .sheet(isPresented: $isAvatarSheetPresented) {
             if let avatarURL = viewModel.userInfo?.avatarURL {
                 AvatarPreviewView(imageURL: avatarURL, isPresented: $isAvatarSheetPresented)
             }
         }
-        .onAppear {
-            // 视图每次出现时重新加载用户信息
-            viewModel.fetchUserInfo()
+    }
+
+    private var loadingView: some View {
+        VStack {
+            Spacer()
+            ProgressView("加载中...")
+                .progressViewStyle(CircularProgressViewStyle())
+            Spacer()
         }
+    }
+
+    private func contentView(userInfo: MyInfoModel) -> some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                avatarSection(userInfo: userInfo)
+                basicInfoSection(userInfo: userInfo)
+                userDetailsSection(userInfo: userInfo)
+                activityPickerSection
+
+                if viewModel.MeAndActivities {
+                    HistoryActivitiesView()
+                        .frame(height: 500)
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .cornerRadius(12)
+                        .shadow(color: Color.black.opacity(0.2), radius: 6, x: 0, y: 3)
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+
+    private func errorView(errorMessage: String) -> some View {
+        VStack {
+            Spacer()
+            Text("加载失败")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.red)
+            Text(errorMessage)
+                .font(.body)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .padding()
+            Button(action: viewModel.fetchUserInfo) {
+                Text("重试")
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+            }
+            Spacer()
+        }
+    }
+
+    private var settingsButton: some View {
+        NavigationLink(destination: SettingsView(userInfo: $viewModel.userInfo)) {
+            Image(systemName: "gearshape")
+                .imageScale(.large)
+                .foregroundColor(.blue)
+        }
+    }
+
+    private func avatarSection(userInfo: MyInfoModel) -> some View {
+        VStack {
+            if let avatarURL = userInfo.avatarURL {
+                KFImage(URL(string: avatarURL.absoluteString))
+                    .placeholder {
+                        Image(systemName: "person.crop.circle.fill")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 120, height: 120)
+                            .foregroundColor(.gray)
+                    }
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 120, height: 120)
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.2), radius: 6, x: 0, y: 3)
+                    .onTapGesture {
+                        isAvatarSheetPresented = true
+                    }
+                    .contextMenu {
+                        Button(action: {
+                            showSaveImageAlert = true
+                        }) {
+                            Label("保存图片", systemImage: "square.and.arrow.down")
+                        }
+                    }
+            } else {
+                Image(systemName: "person.crop.circle.fill")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 120, height: 120)
+                    .foregroundColor(.gray)
+            }
+        }
+    }
+
+    private func basicInfoSection(userInfo: MyInfoModel) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(userInfo.username)
+                .font(.title)
+                .fontWeight(.bold)
+            Text(userInfo.email)
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            Text("性别：\(userInfo.gender)")
+                .font(.body)
+            Text("生日：\(userInfo.birthday, style: .date)")
+                .font(.body)
+                .environment(\.locale, Locale(identifier: "zh_CN"))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color(UIColor.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+
+    private func userDetailsSection(userInfo: MyInfoModel) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("我的兴趣标签：\(userInfo.interest.joined(separator: "、"))")
+                .font(.body)
+            Text("我的声望：\(userInfo.exp >= 0 ? "+\(userInfo.exp)" : "\(userInfo.exp)")")
+                .font(.body)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color(UIColor.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+
+    private var activityPickerSection: some View {
+        Picker("查看信息", selection: $viewModel.MeAndActivities) {
+            Text("↓  🎗️我参与的活动🎗️  ↓").tag(true)
+        }
+        .pickerStyle(SegmentedPickerStyle())
     }
 }
 
-
-
+struct MyInfoView_Previews: PreviewProvider {
+    static var previews: some View {
+        MyInfoView()
+    }
+}

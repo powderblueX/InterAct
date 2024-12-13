@@ -41,6 +41,7 @@ struct CreateActivityView: View {
                         }) {
                             Text("选择")
                                 .foregroundColor(.blue)
+                                .font(.headline)
                         }
                     }
                 }
@@ -48,7 +49,12 @@ struct CreateActivityView: View {
                 // 日期
                 Section(header: Text("选择日期")) {
                     DatePicker("活动时间", selection: $viewModel.activityTime, displayedComponents: [.date, .hourAndMinute])
-                        .environment(\.locale, Locale(identifier: "zh_CN")) // 设置为中文显示
+                        .environment(\.locale, Locale(identifier: "zh_CN"))
+                    if dateError {
+                        Text("活动时间不能早于当前时间")
+                            .foregroundColor(.red)
+                            .font(.footnote)
+                    }
                 }
                 
                 // 人数
@@ -81,7 +87,6 @@ struct CreateActivityView: View {
                             // 这里可以通过ImagePicker选择照片
                             viewModel.isImagePickerPresented = true // 这里模拟上传照片
                         }
-                        
                         Button(action: {
                             viewModel.selectedImage = nil
                         }) {
@@ -90,10 +95,13 @@ struct CreateActivityView: View {
                         }
                         .padding()
                     }
+                    .padding(.horizontal)
+                    
                     Image(uiImage: viewModel.selectedImage ?? UIImage())
                         .resizable()
                         .scaledToFit()
                         .frame(width: 100, height: 100)
+                        .cornerRadius(8)
                 }
                 
                 // 选择定位
@@ -102,6 +110,9 @@ struct CreateActivityView: View {
                         // 在这里可以选择发起人所在地或者点击地图选择
                         showingMapView.toggle() // 显示地图界面
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .padding(.horizontal)
                     if viewModel.islocationDistanceWarning {
                         Text(viewModel.locationDistanceWarning)
                             .foregroundColor(.red)
@@ -157,13 +168,6 @@ struct CreateActivityView: View {
                 }
             }
         }
-        // TODO: 可以在主界面加上一个刷新按钮，按下后重新定位
-//        .onAppear {
-//            viewModel.startUpdatingLocation() // 确保在视图出现时开始位置更新
-//        }
-//        .onDisappear {
-//            viewModel.stopUpdatingLocation() // 停止更新位置
-//        }
     }
 }
 

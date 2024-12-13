@@ -26,7 +26,6 @@ class IMClientManager: NSObject, ObservableObject {
             return
         }
         currentUserId = userId
-        print((currentUserId ?? "1222222")+"22222222222")
         
         do {
             client = try IMClient(ID: userId)
@@ -72,9 +71,6 @@ class IMClientManager: NSObject, ObservableObject {
             try query.findConversations { result in
                 switch result {
                 case .success(let conversations):
-                    for conversation in conversations {
-                        print(conversation.ID)
-                    }
                     print("Fetched conversations successfully.")
                     // 保存会话实例到本地
                     completion(.success(conversations))
