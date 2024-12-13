@@ -10,23 +10,35 @@ import CoreLocation
 
 struct RecommendActivitiesView: View {
     @StateObject private var viewModel = RecommendedActivitiesViewModel()
+    @State private var isAnimating = false // 用于控制文字跳动动画
     
     // TODO: 添加一个自己发布的活动置顶
     var body: some View {
         NavigationView {
             ZStack {
+                DynamicBackgroundView()
+                    .ignoresSafeArea()
                 VStack {
                     // 页面标题
                     Text("为你推荐")
                         .font(.largeTitle)
                         .bold()
                         .padding()
+                        .gradientForeground(colors: [.red, .orange, .yellow, .green, .blue, .purple])
+                        .scaleEffect(isAnimating ? 1.1 : 1.0) // 缩放动画
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                                isAnimating.toggle()
+                            }
+                        }
                     // 搜索栏
                     HStack {
                         TextField("搜索活动...", text: $viewModel.searchText)
                             .padding(.leading, 10)
                             .padding(.vertical, 8)
                             .background(Color.gray.opacity(0.1))
+                            .shadow(radius: 10)
+                            .border(Color(UIColor.systemBackground))
                             .cornerRadius(8)
                         Button(action: {
                             viewModel.searchActivities() // 执行搜索
@@ -90,13 +102,13 @@ struct RecommendActivitiesView: View {
                                     viewModel.loadMoreActivities(useInterestFilter: viewModel.useInterestFilter && !viewModel.userInterest.contains("无🚫"))
                                 }) {
                                     Text("-------继续加载-------")
-                                        .foregroundColor(.blue)
+                                        .foregroundStyle(Color(UIColor.systemBackground))
                                         .padding()
                                 }
                                 .padding(.bottom,150)
                             } else if !viewModel.hasMoreData {
                                 Text("-------已加载全部活动-------")
-                                    .foregroundColor(.blue)
+                                    .foregroundStyle(Color(UIColor.systemBackground))
                                     .padding()
                             }
                             

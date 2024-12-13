@@ -44,7 +44,6 @@ struct MainTabView: View {
             }
             .accentColor(.blue) // 设置底部导航栏图标的选中颜色
             .onAppear{
-                //            updateAppIcon(for: colorScheme == .dark)
                 imClientManager.initializeClient(){ result in
                     switch result{
                     case .success():
@@ -90,19 +89,4 @@ struct MainTabView: View {
             )
         }
     }
-//    func updateAppIcon(for isDarkMode: Bool) {
-//        print("当前深色模式：\(isDarkMode ? "是" : "否")")
-//        guard UIApplication.shared.supportsAlternateIcons else {
-//            print("不支持动态图标切换")
-//            return
-//        }
-//        let iconName = isDarkMode ? "DarkModeIcon" : nil
-//        UIApplication.shared.setAlternateIconName(iconName) { error in
-//            if let error = error {
-//                print("图标切换失败: \(error.localizedDescription)")
-//            } else {
-//                print("图标切换成功")
-//            }
-//        }
-//    }
 }

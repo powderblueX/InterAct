@@ -173,9 +173,3 @@ struct MyInfoView: View {
         .pickerStyle(SegmentedPickerStyle())
     }
 }
-
-struct MyInfoView_Previews: PreviewProvider {
-    static var previews: some View {
-        MyInfoView()
-    }
-}

@@ -11,7 +11,7 @@ import SwiftUI
 struct InterActApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var appState = AppState.shared // 全局状态
-    @State private var isShowingMainView = true  // 控制主界面显示
+    @State private var isLaunchActive = true  // 控制主界面显示
     @State private var opacity: Double = 0.0      // 控制开场动画的透明度
     @State private var scale: CGFloat = 0.1       // 控制文本缩放
     @State private var translation: CGFloat = 50  // 控制文本的移动
@@ -19,16 +19,17 @@ struct InterActApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if isShowingMainView {
-                LaunchScreen()
-                    .onAppear {
-                        // 启动动画结束后切换到主界面
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                            withAnimation {
-                                isShowingMainView = false
-                            }
-                        }
-                    }
+            if isLaunchActive {
+//                LaunchScreen()
+//                    .onAppear {
+//                        // 启动动画结束后切换到主界面
+//                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+//                            withAnimation {
+//                                isShowingMainView = false
+//                            }
+//                        }
+//                    }
+                LaunchAnimationView(isActive: $isLaunchActive) // 开场动画视图
             } else {
                 NavigationView {
                     VStack {
@@ -41,7 +42,7 @@ struct InterActApp: App {
                                 LoginView(viewModel: viewModel)
                             }
                         }
-                        .animation(.easeInOut, value: isShowingMainView) // 添加平滑动画
+                        //.animation(.easeInOut, value: isLaunchActive) // 添加平滑动画
                         .onAppear {
                             viewModel.autoLogin() // 自动登录
                         }
@@ -121,23 +122,23 @@ struct InterActApp: App {
     }
 }
 
-struct LaunchScreen: View {
-    var body: some View {
-        ZStack {
-            Color.blue.ignoresSafeArea()
-            VStack {
-                // 添加 Logo 动画
-                Image(systemName: "globe")
-                    .resizable()
-                    .frame(width: 100, height: 100)
-                    .foregroundColor(.white)
-                    .scaleEffect(1.5)
-                    .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: UUID())
-                Text("InterAct")
-                    .font(.largeTitle)
-                    .foregroundColor(.white)
-                    .bold()
-            }
-        }
-    }
-}
+//struct LaunchScreen: View {
+//    var body: some View {
+//        ZStack {
+//            Color.blue.ignoresSafeArea()
+//            VStack {
+//                // 添加 Logo 动画
+//                Image(systemName: "globe")
+//                    .resizable()
+//                    .frame(width: 100, height: 100)
+//                    .foregroundColor(.white)
+//                    .scaleEffect(1.5)
+//                    .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: UUID())
+//                Text("InterAct")
+//                    .font(.largeTitle)
+//                    .foregroundColor(.white)
+//                    .bold()
+//            }
+//        }
+//    }
+//}
