@@ -30,6 +30,9 @@ class HeatmapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published private var zoomScale: Double = 1.0 // 记录地图缩放比例
     @Published var errorSearchMessage: String? = nil
     
+    @Published var gradientStart = UnitPoint.topLeading
+    @Published var gradientEnd = UnitPoint.bottomTrailing
+    
     func loadHeatmapActivities() {
         LeanCloudService.fetchActivitiesFromDB { [weak self] activities, error in
             guard let self = self else { return }
@@ -59,7 +62,6 @@ class HeatmapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
         guard let newLocation = locations.first else { return }
         
         // 更新设备当前位置信息
-        self.selectedLocation = newLocation.coordinate
         self.hostLocation = newLocation.coordinate
     }
     
@@ -181,9 +183,6 @@ class HeatmapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
         let span = region.span
         zoomScale = max(span.latitudeDelta, span.longitudeDelta)
     }
-    
-    @Published var gradientStart = UnitPoint.topLeading
-    @Published var gradientEnd = UnitPoint.bottomTrailing
     
     func animateGradient() {
         Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in

@@ -19,7 +19,7 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
     @Published var activityDescription: String = ""
     @Published var selectedImage: UIImage? = nil // 上传的照片（非必填项）
     @Published var location: CLLocationCoordinate2D? = CLLocationCoordinate2D(latitude: 39.90750000, longitude: 116.38805555)
-    @Published var hostLocation: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 39.90750000, longitude: 116.38805555) // 默认发起人位置
+    @Published var hostLocation: CLLocationCoordinate2D? = CLLocationCoordinate2D(latitude: 39.90750000, longitude: 116.38805555) // 默认发起人位置
     @Published var showAlert: Bool = false // 弹窗显示标志
     @Published var alertMessage: String = ""
     @Published var selectedLocationName: String = "未选择位置" // 存储选中的地名
@@ -66,11 +66,9 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
         guard let newLocation = locations.first else { return }
         
         // 更新设备当前位置信息
-        self.location = newLocation.coordinate
         self.hostLocation = newLocation.coordinate
-        
         // 可以选择通过地理编码获取地点名称
-        reverseGeocodeLocation(newLocation.coordinate)
+        //reverseGeocodeLocation(newLocation.coordinate)
     }
     
     // 获取失败时的处理
@@ -104,7 +102,7 @@ class CreateActivityViewModel: NSObject, ObservableObject, CLLocationManagerDele
     func updateLocationDistanceWarning() {
         guard let selectedLocation = location else { return }
         
-        let hostCLLocation = CLLocation(latitude: hostLocation.latitude, longitude: hostLocation.longitude)
+        let hostCLLocation = CLLocation(latitude: hostLocation?.latitude ?? 39.90750000, longitude: hostLocation?.longitude ?? 116.38805555)
         let activityCLLocation = CLLocation(latitude: selectedLocation.latitude, longitude: selectedLocation.longitude)
         
         let distance = hostCLLocation.distance(from: activityCLLocation)

@@ -12,7 +12,6 @@ import Charts
 struct HeatmapView: View {
     @StateObject private var viewModel = HeatmapViewModel()
     
-    
     var body: some View {
         VStack{
             ZStack{
@@ -71,6 +70,7 @@ struct HeatmapView: View {
                     MapUserLocationButton()
                     MapCompass()
                     MapScaleView()
+                    MapPitchToggle()
                 }
                 .onMapCameraChange(frequency: MapCameraUpdateFrequency.continuous){ context in
                     viewModel.updateZoomScale(from: context.region)
@@ -79,6 +79,7 @@ struct HeatmapView: View {
                 }
                 .onAppear{
                     viewModel.loadHeatmapActivities()
+                    viewModel.selectedLocation = viewModel.hostLocation
                 }
                 // 显示详细信息框，如果选择了区域
                 if viewModel.showDetails, let region = viewModel.selectedRegion {
@@ -166,8 +167,4 @@ struct HeatmapView: View {
             }
         }
     }
-}
-
-#Preview {
-    HeatmapView()
 }

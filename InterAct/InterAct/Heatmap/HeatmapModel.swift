@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import SwiftUI
 
 // 表示单个活动的模型
 struct HeatmapActivity: Identifiable {
@@ -53,3 +54,4 @@ struct HeatmapRegion: Identifiable, Hashable {
         return countDict
     }
 }
+

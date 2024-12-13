@@ -24,6 +24,7 @@ class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     // CLLocationManager 实例
     private var locationManager = CLLocationManager()
+    private var isUserLocationUpdating = false
     
     override init() {
         super.init()
@@ -33,12 +34,13 @@ class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.startUpdatingLocation() // 开始位置更新
     }
     
-    // 获取设备当前位置
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let newLocation = locations.first else { return }
-        
-        // 更新设备当前位置信息
-        self.selectedLocation = newLocation.coordinate
+    // 设置地图位置到选中的点
+    func setCameraToSelectedLocation() {
+        if let selectedLocation = selectedLocation {
+            position = .camera(
+                MapCamera(centerCoordinate: selectedLocation, distance: 5000) // 这里的距离可以调整
+            )
+        }
     }
     
     // 搜索地址的函数
@@ -49,25 +51,7 @@ class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
             guard let self = self else { return }
             
             if let error = error {
-                if let geocodeError = error as? CLError {
-                    switch geocodeError.code {
-                    case .locationUnknown:
-                        errorSearchMessage = "定位信息未知"
-                        print("定位信息未知")
-                    case .denied:
-                        errorSearchMessage = "定位服务权限被拒绝"
-                        print("定位服务权限被拒绝")
-                    case .network:
-                        errorSearchMessage = "网络错误"
-                        print("网络错误")
-                    default:
-                        errorSearchMessage = "其他错误: \(geocodeError.localizedDescription)"
-                        print("其他错误: \(geocodeError.localizedDescription)")
-                    }
-                } else {
-                    errorSearchMessage = "Geocoding failed: \(error.localizedDescription)"
-                    print("Geocoding failed: \(error.localizedDescription)")
-                }
+                self.handleGeocodingError(error)
                 return
             }
             
@@ -80,7 +64,7 @@ class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
                 region.center = location.coordinate
                 region.span = MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
                 position = .automatic
-                
+                self.isUserLocationUpdating = false // 允许更新位置
                 print("找到位置: \(placemark.name ?? "未知位置")")
             } else {
                 errorSearchMessage = "没有找到相关位置"
@@ -98,23 +82,7 @@ class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
             guard let self = self else { return }
             
             if let error = error as? CLError {
-                switch error.code {
-                case .locationUnknown:
-                    errorSearchMessage = "定位信息未知"
-                    print("定位信息未知")
-                case .denied:
-                    errorSearchMessage = "定位服务权限被拒绝"
-                    print("定位服务权限被拒绝")
-                case .network:
-                    errorSearchMessage = "网络错误"
-                    print("网络错误")
-                case .headingFailure:
-                    errorSearchMessage = "定位信息未知"
-                    print("Heading failure")
-                default:
-                    errorSearchMessage = "定位信息未知"
-                    print("Other error: \(error.localizedDescription)")
-                }
+                self.handleGeocodingError(error)
                 return
             }
             
@@ -129,6 +97,23 @@ class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
         // 设置延迟清除错误消息
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.errorSearchMessage = nil
+        }
+    }
+    
+    private func handleGeocodingError(_ error: Error) {
+        if let geocodeError = error as? CLError {
+            switch geocodeError.code {
+            case .locationUnknown:
+                errorSearchMessage = "定位信息未知"
+            case .denied:
+                errorSearchMessage = "定位服务权限被拒绝"
+            case .network:
+                errorSearchMessage = "网络错误"
+            default:
+                errorSearchMessage = "其他错误: \(geocodeError.localizedDescription)"
+            }
+        } else {
+            errorSearchMessage = "Geocoding failed: \(error.localizedDescription)"
         }
     }
 }

@@ -12,14 +12,16 @@ import CoreLocation
 struct MapView: View {
     @Binding var selectedLocation: CLLocationCoordinate2D?
     @Binding var locationName: String
+    @Binding var hostLocation: CLLocationCoordinate2D?
     
     @StateObject var viewModel = MapViewModel()
     
     @Environment(\.dismiss) var dismiss
     
-    init(selectedLocation: Binding<CLLocationCoordinate2D?>, locationName: Binding<String>) {
+    init(selectedLocation: Binding<CLLocationCoordinate2D?>, locationName: Binding<String>, hostLocation: Binding<CLLocationCoordinate2D?>) {
         self._selectedLocation = selectedLocation
         self._locationName = locationName
+        self._hostLocation = hostLocation
     }
     
     var body: some View {
@@ -47,6 +49,8 @@ struct MapView: View {
                 GeometryReader { geometry in
                     Map(position: $viewModel.position){
                         Marker("活动位置", coordinate: selectedLocation ?? CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555))
+                            .tint(.blue)
+                        Marker("我的位置", coordinate: hostLocation ?? CLLocationCoordinate2D(latitude: 39.9075, longitude: 116.38805555))
                             .tint(.orange)
                     }
                     .mapControls {
@@ -54,8 +58,12 @@ struct MapView: View {
                         MapCompass()
                         MapScaleView()
                     }
-                    .onMapCameraChange { context in
+                    .onMapCameraChange(frequency: MapCameraUpdateFrequency.continuous) { context in
                         viewModel.region = context.region
+                        viewModel.setCameraToSelectedLocation()
+                    }
+                    .onAppear{
+                        viewModel.selectedLocation = hostLocation
                     }
                     .gesture(
                         LongPressGesture(minimumDuration: 0.5) // 设定长按最短时间为 0.5 秒

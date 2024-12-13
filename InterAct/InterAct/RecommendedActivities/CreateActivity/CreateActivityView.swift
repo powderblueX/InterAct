@@ -110,9 +110,6 @@ struct CreateActivityView: View {
                         // 在这里可以选择发起人所在地或者点击地图选择
                         showingMapView.toggle() // 显示地图界面
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .padding(.horizontal)
                     if viewModel.islocationDistanceWarning {
                         Text(viewModel.locationDistanceWarning)
                             .foregroundColor(.red)
@@ -150,6 +147,9 @@ struct CreateActivityView: View {
                     }
                 }
             }
+            .onAppear{
+                viewModel.location = viewModel.hostLocation
+            }
             .alert(isPresented: $viewModel.showAlert) {
                 Alert(title: Text("提示"), message: Text(viewModel.alertMessage), dismissButton: .default(Text("确定")))
             }
@@ -157,7 +157,7 @@ struct CreateActivityView: View {
                 TagSelectionView(availableTags: availableTags, selectedTags: $viewModel.selectedTags, showingTagSelection: $showingTagSelection)
             }
             .sheet(isPresented: $showingMapView) {
-                MapView(selectedLocation: $viewModel.location, locationName: $viewModel.selectedLocationName) // 显示地图视图来选择位置
+                MapView(selectedLocation: $viewModel.location, locationName: $viewModel.selectedLocationName, hostLocation: $viewModel.hostLocation) // 显示地图视图来选择位置
                     .onDisappear {
                         viewModel.updateLocationDistanceWarning()
                     }

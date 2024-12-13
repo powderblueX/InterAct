@@ -28,6 +28,7 @@ struct LaunchAnimationView: View {
                         .frame(width: 50, height: 50)
                         .foregroundColor(showInterest ? .red : .gray)
                         .scaleEffect(showInterest ? 1.2 : 0.5)
+                        .opacity(showInterest ? 1 : 0)
                         .animation(.easeInOut(duration: 0.5), value: showInterest)
 
                     Text("Interest")
@@ -44,6 +45,7 @@ struct LaunchAnimationView: View {
                         .frame(width: 50, height: 50)
                         .foregroundColor(showActivity ? .orange : .gray)
                         .scaleEffect(showActivity ? 1.2 : 0.5)
+                        .opacity(showActivity ? 1 : 0)
                         .animation(.easeInOut(duration: 0.5), value: showActivity)
                     
                     Text("Activity")
@@ -60,6 +62,7 @@ struct LaunchAnimationView: View {
                         .frame(width: 50, height: 50)
                         .foregroundColor(showLocation ? .blue : .gray)
                         .rotationEffect(.degrees(showLocation ? 360 : 0))
+                        .opacity(showLocation ? 1 : 0)
                         .animation(.easeInOut(duration: 0.6), value: showLocation)
                     
                     Image(systemName: "bubble.left.and.bubble.right.fill")
@@ -67,6 +70,7 @@ struct LaunchAnimationView: View {
                         .frame(width: 50, height: 50)
                         .foregroundColor(showChat ? .green : .gray)
                         .offset(y: showChat ? 0 : 200)
+                        .opacity(showChat ? 1 : 0)
                         .animation(.easeInOut(duration: 0.6), value: showChat)
                     
                     // InterAct 合并文字
@@ -76,7 +80,7 @@ struct LaunchAnimationView: View {
                             .font(.largeTitle)
                             .bold()
                             .opacity(showInterAct ? 1 : 0)
-                            .animation(.easeInOut(duration: 0.5).delay(0.4), value: showInterAct)
+                            .animation(.easeInOut(duration: 0.5).delay(0.2), value: showInterAct)
                     }
                 }
             }
