@@ -181,4 +181,24 @@ class HeatmapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
         let span = region.span
         zoomScale = max(span.latitudeDelta, span.longitudeDelta)
     }
+    
+    @Published var gradientStart = UnitPoint.topLeading
+    @Published var gradientEnd = UnitPoint.bottomTrailing
+    
+    func animateGradient() {
+        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 2.0)) {
+                self.gradientStart = UnitPoint.randomPoint()
+                self.gradientEnd = UnitPoint.randomPoint()
+            }
+        }
+    }
+}
+
+
+extension UnitPoint {
+    static func randomPoint() -> UnitPoint {
+        let points: [UnitPoint] = [.top, .bottom, .leading, .trailing, .topLeading, .topTrailing, .bottomLeading, .bottomTrailing]
+        return points.randomElement() ?? .top
+    }
 }

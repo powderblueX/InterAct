@@ -46,7 +46,7 @@ struct GroupChatView: View {
                     messageText = ""
                 }) {
                     Text("发送")
-                        .padding()
+                        .padding(7)
                         .background(Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(8)

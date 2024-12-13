@@ -12,26 +12,42 @@ import Charts
 struct HeatmapView: View {
     @StateObject private var viewModel = HeatmapViewModel()
     
+    
     var body: some View {
         VStack{
-            HStack{
-                TextField("输入地址或地点名称", text: $viewModel.searchText)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.trailing, 8)
-
-                Button(action: {
-                    viewModel.searchAddress(searchText: viewModel.searchText)
-                }) {
-                    Image(systemName: "magnifyingglass")
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
+            ZStack{
+                // 冷色调动态渐变背景
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.blue.opacity(0.8),
+                                Color.purple.opacity(0.8),
+                                Color.cyan.opacity(0.8)
+                            ]),
+                            startPoint: viewModel.gradientStart,
+                            endPoint: viewModel.gradientEnd
+                        )
+                    )
+                    .frame(height: 60) // 设置背景的高度
+                    .onAppear {
+                        viewModel.animateGradient()
+                    }
+                HStack{
+                    TextField("输入地址或地点名称", text: $viewModel.searchText)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.trailing, 4)
+                        .padding(.leading, 4)
+                    
+                    Button(action: {
+                        viewModel.searchAddress(searchText: viewModel.searchText)
+                    }) {
+                        Image(systemName: "magnifyingglass")
+                            .padding(.trailing, 8)
+                            .foregroundColor(.white)
+                    }
                 }
             }
-            .padding()
-
             ZStack{
                 Map(position: $viewModel.position){
                     Marker("搜索位置", coordinate: viewModel.selectedLocation ??  CLLocationCoordinate2D(latitude: 39.90318236, longitude: 116.397755))
@@ -152,3 +168,6 @@ struct HeatmapView: View {
     }
 }
 
+#Preview {
+    HeatmapView()
+}

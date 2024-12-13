@@ -20,21 +20,10 @@ struct InterActApp: App {
     var body: some Scene {
         WindowGroup {
             if isLaunchActive {
-//                LaunchScreen()
-//                    .onAppear {
-//                        // 启动动画结束后切换到主界面
-//                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-//                            withAnimation {
-//                                isShowingMainView = false
-//                            }
-//                        }
-//                    }
                 LaunchAnimationView(isActive: $isLaunchActive) // 开场动画视图
             } else {
                 NavigationView {
                     VStack {
-                        // 确保你的设置按钮在主视图中正确显示
-                        //                    if isShowingMainView {
                         Group {
                             if appState.isLoggedIn {
                                 MainTabView() // 跳转到主页面
@@ -42,36 +31,9 @@ struct InterActApp: App {
                                 LoginView(viewModel: viewModel)
                             }
                         }
-                        //.animation(.easeInOut, value: isLaunchActive) // 添加平滑动画
                         .onAppear {
                             viewModel.autoLogin() // 自动登录
                         }
-                        //                    } else {
-                        //                        // 开场动画
-                        //                        VStack {
-                        //                            Text("志趣相投")
-                        //                                .font(.system(size: 40, weight: .bold))
-                        //                                .foregroundColor(Color.purple)
-                        //                                .opacity(opacity)      // 设置透明度
-                        //                                .scaleEffect(scale)    // 设置缩放
-                        //                                .offset(y: translation) // 设置文本的偏移
-                        //                        }
-                        //                        .onAppear {
-                        //                            // 动画效果：先缩放，然后透明度变化，最后消失
-                        //                            withAnimation(.easeInOut(duration: 1.5)) {
-                        //                                opacity = 1.0
-                        //                                scale = 1.0
-                        //                                translation = 0
-                        //                            }
-                        //
-                        //                            // 动画结束后跳转到主界面
-                        //                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        //                                withAnimation {
-                        //                                    isShowingMainView = true
-                        //                                }
-                        //                            }
-                        //                        }
-                        //                    }
                     }
                 }
                 .alert(isPresented: $viewModel.showAlert) {
