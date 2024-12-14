@@ -9,8 +9,8 @@ import Foundation
 import Combine
 import SwiftUI
 
-class MyInfoViewModel: ObservableObject {
-    @Published var userInfo: MyInfoModel?
+class MyProfileViewModel: ObservableObject {
+    @Published var userInfo: MyProfileModel?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var MeAndActivities: Bool = true
@@ -53,7 +53,7 @@ class MyInfoViewModel: ObservableObject {
     }
     
     // 更新用户信息
-    func updateUserInfo(newInfo: MyInfoModel) {
+    func updateUserInfo(newInfo: MyProfileModel) {
         isLoading = true
         
         // 从 UserDefaults 获取已登录的ID

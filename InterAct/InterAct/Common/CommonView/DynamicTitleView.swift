@@ -8,8 +8,9 @@
 import SwiftUI
 
 // 动态背景视图
+// 动态背景视图
 struct DynamicBackgroundView: View {
-    @State private var gradientColors = [Color.red, Color.blue]
+    @State private var gradientColors = [Color.blue, Color.cyan]
     @State private var startPoint = UnitPoint.top
     @State private var endPoint = UnitPoint.bottom
 
@@ -21,7 +22,7 @@ struct DynamicBackgroundView: View {
             )
             .onAppear {
                 withAnimation {
-                    gradientColors = [.purple, .yellow]
+                    gradientColors = [.cyan, .gray]
                     startPoint = .bottomLeading
                     endPoint = .topTrailing
                 }

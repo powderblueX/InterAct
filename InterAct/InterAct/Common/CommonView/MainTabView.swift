@@ -11,6 +11,7 @@ struct MainTabView: View {
     @StateObject private var imClientManager = IMClientManager.shared
     @Environment(\.colorScheme) var colorScheme
     @StateObject private var appState = AppState.shared
+    
     var body: some View {
         NavigationView {
             TabView {
@@ -36,7 +37,7 @@ struct MainTabView: View {
                     }
                 
                 // 个人信息
-                MyInfoView()
+                MyProfileView()
                     .tabItem {
                         Image(systemName: "person.crop.circle")
                         Text("我")

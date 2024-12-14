@@ -22,7 +22,7 @@ class EditIntereViewModel: ObservableObject {
     }
 
     // 初始化输入字段
-    func initializeFields(with userInfo: MyInfoModel?) {
+    func initializeFields(with userInfo: MyProfileModel?) {
         initialInterests = userInfo?.interest as? [String] ?? ["无🚫"]
         selectedInterests = initialInterests
         checkIfChangesMade()

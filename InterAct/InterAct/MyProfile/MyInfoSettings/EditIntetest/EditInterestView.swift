@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct EditInteresView: View {
-    @Binding var userInfo: MyInfoModel?
+    @Binding var userInfo: MyProfileModel?
     @StateObject private var viewModel = EditIntereViewModel()
     private let genders = ["男", "女"]
     

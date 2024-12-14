@@ -32,6 +32,10 @@ class HeatmapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     @Published var gradientStart = UnitPoint.topLeading
     @Published var gradientEnd = UnitPoint.bottomTrailing
+    var chartData: [String: Int] {
+        guard let region = selectedRegion else { return [:] }
+        return region.categoryCount
+    }
     
     func loadHeatmapActivities() {
         LeanCloudService.fetchActivitiesFromDB { [weak self] activities, error in

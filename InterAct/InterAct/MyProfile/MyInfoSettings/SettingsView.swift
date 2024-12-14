@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @Binding var userInfo: MyInfoModel?
+    @Binding var userInfo: MyProfileModel?
     @StateObject private var viewModel = SettingsViewModel()
 
     var body: some View {

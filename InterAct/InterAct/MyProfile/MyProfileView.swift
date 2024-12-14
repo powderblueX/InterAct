@@ -8,26 +8,30 @@
 import SwiftUI
 import Kingfisher
 
-struct MyInfoView: View {
-    @StateObject private var viewModel = MyInfoViewModel()
+struct MyProfileView: View {
+    @StateObject private var viewModel = MyProfileViewModel()
     @State private var isAvatarSheetPresented = false // 控制头像预览弹窗
     @State private var showSaveImageAlert = false // 控制保存提示
 
     var body: some View {
         NavigationView {
-            Group {
-                if viewModel.isLoading {
-                    loadingView
-                } else if let userInfo = viewModel.userInfo {
-                    contentView(userInfo: userInfo)
-                } else if let errorMessage = viewModel.errorMessage {
-                    errorView(errorMessage: errorMessage)
+            ZStack{
+                DynamicBackgroundView()
+                    .ignoresSafeArea()
+                Group {
+                    if viewModel.isLoading {
+                        loadingView
+                    } else if let userInfo = viewModel.userInfo {
+                        contentView(userInfo: userInfo)
+                    } else if let errorMessage = viewModel.errorMessage {
+                        errorView(errorMessage: errorMessage)
+                    }
                 }
-            }
-            .navigationBarTitle("我的信息", displayMode: .inline)
-            .navigationBarItems(trailing: settingsButton)
-            .onAppear {
-                viewModel.fetchUserInfo()
+                .navigationBarTitle("我的信息", displayMode: .inline)
+                .navigationBarItems(trailing: settingsButton)
+                .onAppear {
+                    viewModel.fetchUserInfo()
+                }
             }
         }
         .sheet(isPresented: $isAvatarSheetPresented) {
@@ -46,7 +50,7 @@ struct MyInfoView: View {
         }
     }
 
-    private func contentView(userInfo: MyInfoModel) -> some View {
+    private func contentView(userInfo: MyProfileModel) -> some View {
         ScrollView {
             VStack(spacing: 24) {
                 avatarSection(userInfo: userInfo)
@@ -97,7 +101,7 @@ struct MyInfoView: View {
         }
     }
 
-    private func avatarSection(userInfo: MyInfoModel) -> some View {
+    private func avatarSection(userInfo: MyProfileModel) -> some View {
         VStack {
             if let avatarURL = userInfo.avatarURL {
                 KFImage(URL(string: avatarURL.absoluteString))
@@ -133,7 +137,7 @@ struct MyInfoView: View {
         }
     }
 
-    private func basicInfoSection(userInfo: MyInfoModel) -> some View {
+    private func basicInfoSection(userInfo: MyProfileModel) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(userInfo.username)
                 .font(.title)
@@ -153,7 +157,7 @@ struct MyInfoView: View {
         .cornerRadius(12)
     }
 
-    private func userDetailsSection(userInfo: MyInfoModel) -> some View {
+    private func userDetailsSection(userInfo: MyProfileModel) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("我的兴趣标签：\(userInfo.interest.joined(separator: "、"))")
                 .font(.body)

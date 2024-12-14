@@ -15,20 +15,7 @@ struct HeatmapView: View {
     var body: some View {
         VStack{
             ZStack{
-                // 冷色调动态渐变背景
-                RoundedRectangle(cornerRadius: 7)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.blue.opacity(0.8),
-                                Color.purple.opacity(0.8),
-                                Color.cyan.opacity(0.8)
-                            ]),
-                            startPoint: viewModel.gradientStart,
-                            endPoint: viewModel.gradientEnd
-                        )
-                    )
-                    .frame(height: 60) // 设置背景的高度
+                GradientHeaderView(gradientStart: viewModel.gradientStart, gradientEnd: viewModel.gradientEnd)
                     .onAppear {
                         viewModel.animateGradient()
                     }
@@ -102,14 +89,13 @@ struct HeatmapView: View {
                             }
                             .padding()
                             
-                            let chartData: [String: Int] = region.categoryCount
                             ScrollView(.horizontal, showsIndicators: true){
                                 Chart {
                                     // 为每个字典条目创建一个条形图
-                                    ForEach(Array(chartData.keys), id: \.self) { key in
+                                    ForEach(Array(viewModel.chartData.keys), id: \.self) { key in
                                         BarMark(
                                             x: .value("Category", key),
-                                            y: .value("End", chartData[key]!)
+                                            y: .value("End", viewModel.chartData[key]!)
                                         )
                                         .foregroundStyle(.blue)  // 设置条形的颜色
                                     }
@@ -133,7 +119,7 @@ struct HeatmapView: View {
                         .background(RoundedRectangle(cornerRadius: 12).fill(Color(UIColor.systemBackground)).shadow(radius: 10))
                         .padding(.top, 40) // 距离顶部一定的空间
                         .frame(maxWidth: 300) // 使其横向扩展
-                        .animation(.spring(), value: region) // 动画效果
+                        .animation(.spring(), value: viewModel.selectedRegion) // 动画效果
                     }
                 }
             }

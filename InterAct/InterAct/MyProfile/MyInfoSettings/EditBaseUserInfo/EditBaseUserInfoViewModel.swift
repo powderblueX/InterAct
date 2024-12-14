@@ -23,7 +23,7 @@ class EditBaseUserInfoViewModel: ObservableObject {
     }
 
     // 初始化输入字段
-    func initializeFields(with userInfo: MyInfoModel?) {
+    func initializeFields(with userInfo: MyProfileModel?) {
         newUsername = userInfo?.username ?? ""
         newEmail = userInfo?.email ?? ""
         birthday = userInfo?.birthday ?? Date()

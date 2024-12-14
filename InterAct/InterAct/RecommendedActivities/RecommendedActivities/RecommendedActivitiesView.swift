@@ -11,8 +11,8 @@ import CoreLocation
 struct RecommendActivitiesView: View {
     @StateObject private var viewModel = RecommendedActivitiesViewModel()
     @State private var isAnimating = false // 用于控制文字跳动动画
-    
-    // TODO: 添加一个自己发布的活动置顶
+    @State private var shimmerOffset: CGFloat = -200 // 控制闪烁位置
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -20,17 +20,21 @@ struct RecommendActivitiesView: View {
                     .ignoresSafeArea()
                 VStack {
                     // 页面标题
-                    Text("为你推荐")
-                        .font(.largeTitle)
-                        .bold()
-                        .padding()
-                        .gradientForeground(colors: [.red, .orange, .yellow, .green, .blue, .purple])
-                        .scaleEffect(isAnimating ? 1.1 : 1.0) // 缩放动画
-                        .onAppear {
-                            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                                isAnimating.toggle()
-                            }
+                    HStack {
+                        Text("🌈 ")
+                        Text("为你推荐")
+                            .gradientForeground(colors: [.red, .orange, .yellow, .green, .cyan, .blue, .purple])
+                        Text(" 🌟")
+                    }
+                    .font(.largeTitle)
+                    .bold()
+                    .padding()
+                    .scaleEffect(isAnimating ? 1.5 : 1.0) // 缩放动画
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                            isAnimating.toggle()
                         }
+                    }
                     // 搜索栏
                     HStack {
                         TextField("搜索活动...", text: $viewModel.searchText)

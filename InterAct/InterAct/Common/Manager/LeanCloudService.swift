@@ -81,7 +81,7 @@ struct LeanCloudService {
     
     
     // 获取用户信息
-    static func fetchUserInfo(objectId: String, username: String, completion: @escaping (Result<MyInfoModel, Error>) -> Void) {
+    static func fetchUserInfo(objectId: String, username: String, completion: @escaping (Result<MyProfileModel, Error>) -> Void) {
         let query = LCQuery(className: "_User")
         query.whereKey("objectId", .equalTo(objectId))
         
@@ -103,7 +103,7 @@ struct LeanCloudService {
                 // 如果 avatarURLString 有值，尝试转换为 URL
                 let avatarURL = avatarURLString.isEmpty ? nil : URL(string: avatarURLString)
                 
-                let userInfo = MyInfoModel(
+                let userInfo = MyProfileModel(
                     id: objectId,
                     username: username,
                     avatarURL: avatarURL,
@@ -132,7 +132,7 @@ struct LeanCloudService {
     
     
     // 更新用户信息
-    static func updateUserInfo(objectId: String, newInfo: MyInfoModel, completion: @escaping (Result<Void, Error>) -> Void) {
+    static func updateUserInfo(objectId: String, newInfo: MyProfileModel, completion: @escaping (Result<Void, Error>) -> Void) {
         let query = LCQuery(className: "_User")
         query.whereKey("objectId", .equalTo(objectId))
         
@@ -373,7 +373,7 @@ struct LeanCloudService {
         
         // 过滤兴趣标签匹配的活动
         query.whereKey("interestTag", .containedIn(interests))  // 查找兴趣标签包含在给定数组中的活动
-        
+        query.whereKey("isDone", .equalTo(false))
         // 过滤活动时间晚于当前时间的活动
         query.whereKey("activityTime", .greaterThan(LCDate(currentDate))) // 活动时间必须在当前时间之后
         query.orderedKeys = "activityTime"
@@ -452,6 +452,7 @@ struct LeanCloudService {
         
         // 使用 LeanCloud SDK 查询所有活动
         let query = LCQuery(className: "Activity")
+        query.whereKey("isDone", .equalTo(false))
         
         // 过滤活动时间晚于当前时间的活动
         query.whereKey("activityTime", .greaterThan(LCDate(currentDate))) // 活动时间必须在当前时间之后

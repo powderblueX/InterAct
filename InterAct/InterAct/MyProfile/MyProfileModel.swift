@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct MyInfoModel: Identifiable {
+struct MyProfileModel: Identifiable {
     let id: String          // 用户唯一标识符
     var username: String    // 用户名
     var avatarURL: URL?     // 用户头像 URL
