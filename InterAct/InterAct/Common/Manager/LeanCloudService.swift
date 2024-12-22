@@ -191,9 +191,9 @@ struct LeanCloudService {
     
     
     // 用户基本信息更新
-    static func saveChanges(objectId: String?, newUsername: String, newEmail: String, birthday: Date, gender: String, completion: @escaping (Bool, String?) -> Void) {
+    static func saveChanges(objectId: String?, newUsername: String, birthday: Date, gender: String, completion: @escaping (Bool, String?) -> Void) {
         // 检查用户名和邮箱是否为空
-        guard !newUsername.isEmpty, !newEmail.isEmpty else {
+        guard !newUsername.isEmpty else {
             completion(false, "用户名和邮箱不能为空")
             return
         }
@@ -211,7 +211,6 @@ struct LeanCloudService {
         // 设置要更新的字段
         do {
             try user.set("username", value: newUsername)
-            try user.set("email", value: newEmail)
             try user.set("birthday", value: LCDate(birthday))
             try user.set("gender", value: gender)
         } catch {
@@ -980,7 +979,7 @@ struct LeanCloudService {
         let query = LCQuery(className: "Activity")
         query.whereKey("hostId", .equalTo(currentUserId))   // 查询 hostId 为当前用户的活动
         query.whereKey("activityTime", .greaterThan(now))   // 查询活动时间在当前时间之后的活动
-        query.whereKey("isDone", .equalTo(true))
+        query.whereKey("isDone", .equalTo(false))
         // 执行查询
         query.find { result in
             switch result {

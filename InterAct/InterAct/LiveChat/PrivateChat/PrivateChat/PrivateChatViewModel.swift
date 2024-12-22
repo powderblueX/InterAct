@@ -88,6 +88,7 @@ class PrivateChatViewModel: ObservableObject {
                 switch result {
                 case .success(let activityDict):
                     self.activityDict = activityDict
+                    print(activityDict)
                 case .failure(let error):
                     print("Failed to fetch activities: \(error.localizedDescription)")
                 }

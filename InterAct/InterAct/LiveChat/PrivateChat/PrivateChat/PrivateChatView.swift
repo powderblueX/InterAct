@@ -95,16 +95,6 @@ struct PrivateChatView: View {
                         .background(Color.blue)
                         .cornerRadius(5)
                 }
-                
-//                // 选择图片按钮
-//                Button(action: {
-//                    // TODO: 可以添加调用相机或选择相册的逻辑
-//                    viewModel.selectImage()
-//                }) {
-//                    Image(systemName: "photo")
-//                        .foregroundColor(.blue)
-//                        .padding()
-//                }
             }
             .padding()
         }

@@ -52,7 +52,10 @@ class PrivateMessageRowViewModel: ObservableObject {
     }
     
     func checkIsParticipatory(activityDict: [String: [String]], partner: Partner) -> Bool {
+        print()
         if let activityId = self.activityId {
+            print(activityDict)
+            print(partner)
             return !activityDict.keys.contains(activityId) || (activityDict[activityId]?.contains(partner.id) ?? true)
         } else {
             return true

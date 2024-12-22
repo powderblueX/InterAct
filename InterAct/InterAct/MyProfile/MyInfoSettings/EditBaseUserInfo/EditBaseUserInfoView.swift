@@ -20,12 +20,6 @@ struct EditBaseUserInfoView: View {
                 TextField("用户名", text: $viewModel.newUsername)
                     .autocapitalization(.none)
             }
-
-            Section(header: Text("邮箱")) {
-                TextField("邮箱", text: $viewModel.newEmail)
-                    .autocapitalization(.none)
-                    .keyboardType(.emailAddress)
-            }
             
             Section(header: Text("生日")) {
                 DatePicker("生日", selection: $viewModel.birthday, displayedComponents: .date)
@@ -48,7 +42,6 @@ struct EditBaseUserInfoView: View {
                     if success {
                         // 更新绑定的数据
                         userInfo?.username = viewModel.newUsername
-                        userInfo?.email = viewModel.newEmail
                         userInfo?.birthday = viewModel.birthday
                         userInfo?.gender = viewModel.gender
                     }
